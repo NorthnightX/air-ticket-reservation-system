@@ -1,12 +1,18 @@
 package com.atrs.airticketreservationsystem.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.common.ImageVerificationCode;
 import com.atrs.airticketreservationsystem.entity.Admin;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginForm;
+import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.mapper.AdminMapper;
 import com.atrs.airticketreservationsystem.service.AdminService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +35,24 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Override
-    public JsonResponse login(LoginForm loginForm) {
-        return null;
+    public JsonResponse login(LoginFormData loginForm) {
+        String password = loginForm.getPassword();
+        String account = loginForm.getAccount();
+        String code = loginForm.getCode();
+        String loginCode = stringRedisTemplate.opsForValue().get(loginForm.getRedisKey());
+        if(!code.equals(loginCode)){
+            return JsonResponse.error("验证码错误");
+        }
+        LambdaQueryWrapper<Admin> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Admin::getAccount, account);
+        Admin admin = this.getOne(queryWrapper);
+        if(admin == null){
+            return JsonResponse.error("用户未注册");
+        }
+        if(!password.equals(admin.getPassword())){
+            return JsonResponse.error("密码错误");
+        }
+        return JsonResponse.success("登录成功");
     }
 
     @Override

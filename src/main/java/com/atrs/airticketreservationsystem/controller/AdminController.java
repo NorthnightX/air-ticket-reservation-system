@@ -1,7 +1,7 @@
 package com.atrs.airticketreservationsystem.controller;
 
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
-import com.atrs.airticketreservationsystem.entity.LoginForm;
+import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.service.AdminService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class AdminController {
         return adminService.code();
     }
     @PostMapping("/login")
-    public JsonResponse login(@RequestBody LoginForm loginForm){
+    public JsonResponse login(@RequestBody LoginFormData loginForm){
         return adminService.login(loginForm);
     }
 }
