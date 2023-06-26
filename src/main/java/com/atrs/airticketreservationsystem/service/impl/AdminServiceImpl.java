@@ -4,13 +4,15 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.common.ImageVerificationCode;
-import com.atrs.airticketreservationsystem.entity.Admin;
+
+import com.atrs.airticketreservationsystem.entity.Administrator;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.entity.UserDTO;
 import com.atrs.airticketreservationsystem.mapper.AdminMapper;
 import com.atrs.airticketreservationsystem.service.AdminService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
 
 @Service
-public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements AdminService {
+public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> implements AdminService {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Override
@@ -45,9 +47,11 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
         if(!code.equalsIgnoreCase(loginCode)){
             return JsonResponse.error("验证码错误");
         }
-        LambdaQueryWrapper<Admin> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Admin::getAccount, account);
-        Admin admin = this.getOne(queryWrapper);
+        LambdaQueryWrapper<Administrator> queryWrapper = new LambdaQueryWrapper<>();
+//        QueryWrapper queryWrapper = new QueryWrapper();
+//        queryWrapper.eq("account", account);
+        queryWrapper.eq(Administrator::getAccount,account);
+        Administrator admin = this.getOne(queryWrapper);
         if(admin == null){
             return JsonResponse.error("用户未注册");
         }

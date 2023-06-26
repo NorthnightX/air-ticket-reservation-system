@@ -1,9 +1,10 @@
 package com.atrs.airticketreservationsystem.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
+@TableName("administrator")
 @Data
-public class Admin {
+public class Administrator {
 
   private Long id;
   private String username;
