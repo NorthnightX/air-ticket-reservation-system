@@ -6,8 +6,8 @@ import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.common.ImageVerificationCode;
 import com.atrs.airticketreservationsystem.entity.Admin;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
-import com.atrs.airticketreservationsystem.entity.LoginForm;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;
+import com.atrs.airticketreservationsystem.entity.UserDTO;
 import com.atrs.airticketreservationsystem.mapper.AdminMapper;
 import com.atrs.airticketreservationsystem.service.AdminService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -27,8 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_VERIFICATION_KEY;
-import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_VERIFICATION_TTL;
+import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
 
 @Service
 public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements AdminService {
@@ -40,7 +39,10 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
         String account = loginForm.getAccount();
         String code = loginForm.getCode();
         String loginCode = stringRedisTemplate.opsForValue().get(loginForm.getRedisKey());
-        if(!code.equals(loginCode)){
+        if(loginCode == null || loginCode.length() == 0){
+            return JsonResponse.error("验证码过期");
+        }
+        if(!code.equalsIgnoreCase(loginCode)){
             return JsonResponse.error("验证码错误");
         }
         LambdaQueryWrapper<Admin> queryWrapper = new LambdaQueryWrapper<>();
@@ -49,9 +51,26 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
         if(admin == null){
             return JsonResponse.error("用户未注册");
         }
-        if(!password.equals(admin.getPassword())){
+        String md5Password = MD5.create().digestHex(password);
+        if(!md5Password.equals(admin.getPassword())){
             return JsonResponse.error("密码错误");
         }
+        UserDTO userDTO = new UserDTO();
+        BeanUtils.copyProperties(admin,userDTO);
+        String token = UUID.randomUUID().toString();
+        Map<String, Object> userMap = BeanUtil.beanToMap(
+                userDTO, new HashMap<>(), CopyOptions.create().
+                        setIgnoreNullValue(true).
+                        setFieldValueEditor((fieldName, fieldValue) -> {
+                            if (fieldValue == null) {
+                                fieldValue = "0";
+                            } else {
+                                fieldValue = fieldValue + "";
+                            }
+                            return fieldValue;
+                        }));
+        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
         return JsonResponse.success("登录成功");
     }
 
