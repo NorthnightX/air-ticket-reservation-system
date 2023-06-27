@@ -15,6 +15,8 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.List;
 
+import static com.atrs.airticketreservationsystem.common.SystemConstants.DEFAULT_PASSWORD;
+
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -77,14 +79,14 @@ public class AdminController {
      */
     @PutMapping("/updatePassword")
     public JsonResponse updatePassword(@RequestParam long id){
-        String md5Password = MD5.create().digestHex("123123");
+        String md5Password = MD5.create().digestHex(DEFAULT_PASSWORD);
         Administrator administrator = adminService.getById(id);
         administrator.setPassword(md5Password);
         boolean updated = adminService.updateById(administrator);
         if(!updated){
-            return JsonResponse.error("修改失败");
+            return JsonResponse.error("重置失败");
         }
-        return JsonResponse.success("修改成功");
+        return JsonResponse.success("重置成功");
     }
 
     /**

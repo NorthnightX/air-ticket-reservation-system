@@ -5,10 +5,10 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.common.ImageVerificationCode;
 
+import com.atrs.airticketreservationsystem.entity.AdminDTO;
 import com.atrs.airticketreservationsystem.entity.Administrator;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;
-import com.atrs.airticketreservationsystem.entity.UserDTO;
 import com.atrs.airticketreservationsystem.mapper.AdminMapper;
 import com.atrs.airticketreservationsystem.service.AdminService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -59,14 +59,14 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
         if(!md5Password.equals(admin.getPassword())){
             return JsonResponse.error("密码错误");
         }
-        if(!admin.getStatus().equals("0")){
+        if(admin.getStatus().equals("0")){
             return JsonResponse.error("用户封禁");
         }
-        UserDTO userDTO = new UserDTO();
-        BeanUtils.copyProperties(admin,userDTO);
+        AdminDTO adminDTO = new AdminDTO();
+        BeanUtils.copyProperties(admin,adminDTO);
         String token = UUID.randomUUID().toString();
-        Map<String, Object> userMap = BeanUtil.beanToMap(
-                userDTO, new HashMap<>(), CopyOptions.create().
+        Map<String, Object> adminMap = BeanUtil.beanToMap(
+                adminDTO, new HashMap<>(), CopyOptions.create().
                         setIgnoreNullValue(true).
                         setFieldValueEditor((fieldName, fieldValue) -> {
                             if (fieldValue == null) {
@@ -76,9 +76,9 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
                             }
                             return fieldValue;
                         }));
-        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, adminMap);
         stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
-        return JsonResponse.success(userDTO);
+        return JsonResponse.success(adminDTO);
     }
 
     @Override

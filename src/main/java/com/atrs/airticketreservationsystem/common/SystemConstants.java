@@ -1,8 +1,8 @@
 package com.atrs.airticketreservationsystem.common;
 
 public class SystemConstants {
-    public static final String IMAGE_UPLOAD_DIR = "F:\\img";
-    public static final String VIDEO_UPLOAD_DIR = "F:\\video";
-    public static final String IMAGE_UPLOAD_DIR_FIND = "F:\\img\\videoCover\\";
+    public static final String DEFAULT_PASSWORD = "123123";
+    public static final Integer DEFAULT_LEVEL = 0;
+    public static final String DEFAULT_STATUS = "1";
 
 }
