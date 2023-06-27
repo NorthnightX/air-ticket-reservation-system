@@ -2,20 +2,20 @@ package com.atrs.airticketreservationsystem.controller;
 
 
 import cn.hutool.crypto.digest.MD5;
-import com.atrs.airticketreservationsystem.entity.Administrator;
-import com.atrs.airticketreservationsystem.entity.JsonResponse;
-import com.atrs.airticketreservationsystem.entity.LoginFormData;
+import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.AdminService;
+import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 
-import static com.atrs.airticketreservationsystem.common.SystemConstants.DEFAULT_PASSWORD;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController
 @RequestMapping("/admin")
@@ -37,11 +37,18 @@ public class AdminController {
     /**
      * 登录
      * @param loginForm
+     *
      * @return
      */
     @PostMapping("/login")
     public JsonResponse login(@RequestBody LoginFormData loginForm){
         return adminService.login(loginForm);
+    }
+
+    @GetMapping("/getMe")
+    public JsonResponse getMe(){
+        AdminDTO user = UserHolder.getUser();
+        return JsonResponse.success(user);
     }
 
     /**
@@ -107,5 +114,17 @@ public class AdminController {
         queryWrapper.eq(admin.getAdministratorType().length() > 0, Administrator::getAdministratorType, admin.getAdministratorType());
         Page<Administrator> administratorPage = adminService.page(page, queryWrapper);
         return JsonResponse.success(administratorPage);
+    }
+
+    @PostMapping("/addAdministrator")
+    public JsonResponse addAdministrator(@RequestBody Administrator administrator){
+        administrator.setStatus(DEFAULT_STATUS);
+        String md5Password = MD5.create().digestHex(DEFAULT_PASSWORD);
+        administrator.setPassword(md5Password);
+        boolean save = adminService.save(administrator);
+        if(save){
+            return JsonResponse.success("新增成功");
+        }
+        return JsonResponse.error("新增失败");
     }
 }

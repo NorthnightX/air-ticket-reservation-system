@@ -85,6 +85,11 @@ public class AgentController {
         return JsonResponse.success("删除成功");
     }
 
+    /**
+     * 新增代理
+     * @param agent
+     * @return
+     */
     @PostMapping("/addAgent")
     public JsonResponse addAgent(@RequestBody Agent agent){
         agent.setLevel(DEFAULT_LEVEL);

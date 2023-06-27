@@ -12,7 +12,6 @@ import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.mapper.AdminMapper;
 import com.atrs.airticketreservationsystem.service.AdminService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -48,8 +47,6 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
             return JsonResponse.error("验证码错误");
         }
         LambdaQueryWrapper<Administrator> queryWrapper = new LambdaQueryWrapper<>();
-//        QueryWrapper queryWrapper = new QueryWrapper();
-//        queryWrapper.eq("account", account);
         queryWrapper.eq(Administrator::getAccount,account);
         Administrator admin = this.getOne(queryWrapper);
         if(admin == null){
@@ -78,7 +75,7 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
                         }));
         stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, adminMap);
         stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
-        return JsonResponse.success(adminDTO);
+        return JsonResponse.success(token);
     }
 
     @Override

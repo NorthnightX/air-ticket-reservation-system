@@ -8,6 +8,7 @@ public class AirTicketReservationSystemApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(AirTicketReservationSystemApplication.class, args);
+        System.out.println("启动成功");
     }
 
 }
