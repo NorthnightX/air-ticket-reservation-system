@@ -1,14 +1,19 @@
 package com.atrs.airticketreservationsystem.controller;
 
 
+import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.entity.Administrator;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.service.AdminService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
@@ -28,14 +33,45 @@ public class AdminController {
     }
 
     @DeleteMapping("/delete")
-    public JsonResponse delete(){
-        return JsonResponse.error("!");
+    public JsonResponse delete(@RequestParam List<Long> id){
+        boolean removeById = adminService.removeByIds(id);
+        if(!removeById){
+            return JsonResponse.error("删除失败");
+        }
+        return JsonResponse.success("删除成功");
     }
 
-    @GetMapping("/page")
+    @PutMapping("/updateAdmin")
+    public JsonResponse updateAdmin(@RequestBody Administrator administrator){
+        boolean updated = adminService.updateById(administrator);
+        if(!updated){
+            return JsonResponse.error("修改失败");
+        }
+        return JsonResponse.success("修改成功");
+    }
+
+    @PutMapping("/updatePassword")
+    public JsonResponse updatePassword(@RequestParam long id){
+        String md5Password = MD5.create().digestHex("123123");
+        Administrator administrator = adminService.getById(id);
+        administrator.setPassword(md5Password);
+        boolean updated = adminService.updateById(administrator);
+        if(!updated){
+            return JsonResponse.error("修改失败");
+        }
+        return JsonResponse.success("修改成功");
+    }
+
+    @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1")Integer pageNum,
-                             @RequestParam(required = false, defaultValue = "6")Integer pageSize,
+                             @RequestParam(required = false, defaultValue = "10")Integer pageSize,
                              Administrator admin){
-        return JsonResponse.error("1");
+        Page<Administrator> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Administrator> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.like(admin.getUsername().length() > 0, Administrator::getUsername, admin.getUsername());
+        queryWrapper.eq(admin.getStatus().length() > 0 , Administrator::getStatus, admin.getStatus());
+        queryWrapper.eq(admin.getAdministratorType().length() > 0, Administrator::getAdministratorType, admin.getAdministratorType());
+        Page<Administrator> administratorPage = adminService.page(page, queryWrapper);
+        return JsonResponse.success(administratorPage);
     }
 }

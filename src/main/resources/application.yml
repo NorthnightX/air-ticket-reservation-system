@@ -51,6 +51,6 @@ mybatis-plus:
 
 logging:
   level:
-    com.ntx: debug
+    com.atrs: debug
 
 

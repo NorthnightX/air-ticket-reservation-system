@@ -75,7 +75,7 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
                         }));
         stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
         stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
-        return JsonResponse.success("登录成功");
+        return JsonResponse.success(userDTO);
     }
 
     @Override
