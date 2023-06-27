@@ -22,16 +22,31 @@ public class AdminController {
     @Resource
     public AdminService adminService;
 
-
+    /**
+     * 图形验证码
+     * @return
+     * @throws IOException
+     */
     @PostMapping("/code")
     public JsonResponse code() throws IOException {
         return adminService.code();
     }
+
+    /**
+     * 登录
+     * @param loginForm
+     * @return
+     */
     @PostMapping("/login")
     public JsonResponse login(@RequestBody LoginFormData loginForm){
         return adminService.login(loginForm);
     }
 
+    /**
+     * 删除
+     * @param id
+     * @return
+     */
     @DeleteMapping("/delete")
     public JsonResponse delete(@RequestParam List<Long> id){
         boolean removeById = adminService.removeByIds(id);
@@ -41,6 +56,11 @@ public class AdminController {
         return JsonResponse.success("删除成功");
     }
 
+    /**
+     * 修改管理员
+     * @param administrator
+     * @return
+     */
     @PutMapping("/updateAdmin")
     public JsonResponse updateAdmin(@RequestBody Administrator administrator){
         boolean updated = adminService.updateById(administrator);
@@ -50,6 +70,11 @@ public class AdminController {
         return JsonResponse.success("修改成功");
     }
 
+    /**
+     * 重置密码，密码重置为123123
+     * @param id
+     * @return
+     */
     @PutMapping("/updatePassword")
     public JsonResponse updatePassword(@RequestParam long id){
         String md5Password = MD5.create().digestHex("123123");
@@ -62,6 +87,13 @@ public class AdminController {
         return JsonResponse.success("修改成功");
     }
 
+    /**
+     * 管理员分页
+     * @param pageNum
+     * @param pageSize
+     * @param admin
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1")Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10")Integer pageSize,

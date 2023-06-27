@@ -59,6 +59,9 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
         if(!md5Password.equals(admin.getPassword())){
             return JsonResponse.error("密码错误");
         }
+        if(!admin.getStatus().equals("0")){
+            return JsonResponse.error("用户封禁");
+        }
         UserDTO userDTO = new UserDTO();
         BeanUtils.copyProperties(admin,userDTO);
         String token = UUID.randomUUID().toString();
