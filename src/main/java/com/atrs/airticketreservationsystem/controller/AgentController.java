@@ -1,17 +1,15 @@
 package com.atrs.airticketreservationsystem.controller;
 
 import cn.hutool.crypto.digest.MD5;
-import com.atrs.airticketreservationsystem.entity.Administrator;
+
 import com.atrs.airticketreservationsystem.entity.Agent;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.service.AgentService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import java.util.List;
-
 import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController

@@ -7,14 +7,10 @@ import com.atrs.airticketreservationsystem.service.AdminService;
 import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
-
 import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController

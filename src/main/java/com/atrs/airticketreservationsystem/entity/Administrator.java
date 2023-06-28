@@ -2,9 +2,8 @@ package com.atrs.airticketreservationsystem.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-@TableName("administrator")
+
 @Data
 public class Administrator {
   @TableId(type = IdType.AUTO)
@@ -15,7 +14,6 @@ public class Administrator {
   private String avatar;
   private String administratorType;
   private String status;
-
 
 
 }

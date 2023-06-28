@@ -32,11 +32,11 @@ public class WebConfig implements WebMvcConfigurer {
     }
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new LoginInterceptor())
-                .excludePathPatterns(
-                        "/admin/code",
-                        "/admin/login"
-                ).order(1);
+//        registry.addInterceptor(new LoginInterceptor())
+//                .excludePathPatterns(
+//                        "/admin/code",
+//                        "/admin/login"
+//                ).order(1);
         registry.addInterceptor(new RefreshTokenInterception(stringRedisTemplate)).addPathPatterns(
                 "/**"
         ).order(0);

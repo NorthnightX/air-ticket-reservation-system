@@ -1,11 +1,11 @@
 package com.atrs.airticketreservationsystem.entity;
 
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-
 @Data
 public class Airport {
   @TableId(type = IdType.AUTO)
@@ -19,7 +19,6 @@ public class Airport {
   private LocalDateTime modifyTime;
   private String creator;
   private String modifier;
-
 
 
 }

@@ -1,8 +1,5 @@
 package com.atrs.airticketreservationsystem.controller;
 
-import cn.hutool.crypto.digest.MD5;
-import com.atrs.airticketreservationsystem.entity.Administrator;
-import com.atrs.airticketreservationsystem.entity.Agent;
 import com.atrs.airticketreservationsystem.entity.Airport;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.service.AirportService;
@@ -15,7 +12,6 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController
 @RequestMapping("/airport")
@@ -23,6 +19,13 @@ public class AirportController {
     @Resource
     private AirportService airportService;
 
+    /**
+     * 分页查询
+     * @param pageNum
+     * @param pageSize
+     * @param airport
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1") Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -32,10 +35,25 @@ public class AirportController {
         queryWrapper.like(airport.getAirportName().length() > 0, Airport::getAirportName, airport.getAirportName());
         queryWrapper.eq(airport.getProvince().length() > 0, Airport::getProvince, airport.getProvince());
         queryWrapper.eq(airport.getCity().length() > 0, Airport::getCity, airport.getCity());
-        Page<Airport> administratorPage = airportService.page(page, queryWrapper);
-        return JsonResponse.success(administratorPage);
+        Page<Airport> airportPage= airportService.page(page, queryWrapper);
+        return JsonResponse.success(airportPage);
     }
 
+    /**
+     * 查询所有机场
+     * @return
+     */
+    @GetMapping("/getAllAirport")
+    public JsonResponse allAirport(){
+        List<Airport> list = airportService.list();
+        return JsonResponse.success(list);
+    }
+
+    /**
+     * 删除
+     * @param id
+     * @return
+     */
     @DeleteMapping("/delete")
     public JsonResponse delete(@RequestParam List<Long> id) {
         boolean removeById = airportService.removeByIds(id);
@@ -45,6 +63,11 @@ public class AirportController {
         return JsonResponse.success("删除成功");
     }
 
+    /**
+     * 更新
+     * @param airport
+     * @return
+     */
     @PutMapping("/updateAirport")
     public JsonResponse updateAgent(@RequestBody Airport airport){
         airport.setModifyTime(LocalDateTime.now());
@@ -55,6 +78,12 @@ public class AirportController {
         }
         return JsonResponse.success("修改成功");
     }
+
+    /**
+     * 新增
+     * @param airport
+     * @return
+     */
     @PostMapping("/addAirport")
     public JsonResponse addAirport(@RequestBody Airport airport){
         airport.setModifyTime(LocalDateTime.now());

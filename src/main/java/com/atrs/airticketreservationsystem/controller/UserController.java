@@ -1,7 +1,7 @@
 package com.atrs.airticketreservationsystem.controller;
 
 import cn.hutool.crypto.digest.MD5;
-import com.atrs.airticketreservationsystem.entity.Agent;
+
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.User;
 import com.atrs.airticketreservationsystem.service.UserService;
