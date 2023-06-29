@@ -8,5 +8,6 @@ public class RedisConstants {
     public static final Long LOGIN_VERIFICATION_TTL = 1L;
     public static final String LOGIN_USER_KEY = "login:token:";
     public static final Long LOGIN_USER_TTL = 30L;
+    public static final String FLIGHT_MSG = "flight:";
 
 }

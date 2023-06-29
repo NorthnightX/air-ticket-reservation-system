@@ -11,6 +11,7 @@ public class AircraftType {
   @TableId(type = IdType.AUTO)
   private Long id;
   private String model;
+
   private Long passengerCapacity;
   private Long firstClassCapacity;
   private Long economyClassCapacity;

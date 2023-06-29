@@ -14,6 +14,8 @@ public class Announcement {
   private Long id;
   private String title;
   private String content;
+  private Integer status;
+  private LocalDateTime ttl;
   private LocalDateTime publishTime;
   private LocalDateTime modifyTime;
   private String creator;

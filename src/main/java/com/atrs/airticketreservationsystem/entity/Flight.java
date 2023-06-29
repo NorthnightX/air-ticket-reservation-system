@@ -2,6 +2,7 @@ package com.atrs.airticketreservationsystem.entity;
 
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
@@ -12,12 +13,32 @@ public class Flight {
   private Long flightId;
   private Long routeId;
   private Long aircraftId;
+
+  @TableField(exist = false)
+  private String aircraftCode;
+  @TableField(exist = false)
+  private Long departureAirportId;
+  @TableField(exist = false)
+  private Long destinationAirportId;
+  @TableField(exist = false)
+  private String departureAirport;
+  @TableField(exist = false)
+  private String destinationAirport;
+  @TableField(exist = false)
+  private String departureCity;
+  @TableField(exist = false)
+  private String destinationCity;
+
+
+  private Integer economyClassNum;
+  private Integer firstClassNum;
+  private Integer status;
   private LocalDateTime departureTime;
   private LocalDateTime arrivalTime;
   private Double economyClassPrice;
   private Double firstClassPrice;
-  private java.sql.Timestamp publishTime;
-  private java.sql.Timestamp modifyTime;
+  private LocalDateTime publishTime;
+  private LocalDateTime modifyTime;
   private String creator;
   private String modifier;
 
