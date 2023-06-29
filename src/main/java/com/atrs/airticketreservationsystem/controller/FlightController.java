@@ -68,9 +68,12 @@ public class FlightController {
         } else{
             return JsonResponse.error("该城市没有航班");
         }
+        queryWrapper.like(flight.getDepartureTime().length() > 0, Flight::getDepartureTime, flight.getDepartureTime());
         Page<Flight> flightPage = flightService.page(page, queryWrapper);
         List<Flight> flightList = flightPage.getRecords();
-        
+        if(flightList.size() == 0){
+            return JsonResponse.error("没有符合条件的航班");
+        }
         populateFlightData(flightList);
         page.setRecords(flightList);
         page.setTotal(flightPage.getTotal());
