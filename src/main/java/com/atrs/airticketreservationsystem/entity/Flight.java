@@ -35,12 +35,13 @@ public class Flight {
   private Integer economyClassNum;
   private Integer firstClassNum;
   private Integer status;
-//  @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss" )
-//  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-  @DateTimeFormat(pattern = "yyyy-MM-dd" )
-  @JsonFormat(pattern = "yyyy-MM-dd")
+  @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss" )
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
   private String departureTime;
-  private LocalDateTime arrivalTime;
+  @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss" )
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private String arrivalTime;
+
   private Double economyClassPrice;
   private Double firstClassPrice;
   private LocalDateTime publishTime;

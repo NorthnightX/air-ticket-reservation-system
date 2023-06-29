@@ -7,20 +7,22 @@ import com.atrs.airticketreservationsystem.service.AircraftInformationService;
 import com.atrs.airticketreservationsystem.service.AirportService;
 import com.atrs.airticketreservationsystem.service.FlightService;
 import com.atrs.airticketreservationsystem.service.RouteService;
+import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import static com.atrs.airticketreservationsystem.common.RedisConstants.FLIGHT_MSG;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.DEFAULT_STATUS_FLIGHT;
 
 @RestController
 @RequestMapping("/flight")
@@ -68,7 +70,10 @@ public class FlightController {
         } else{
             return JsonResponse.error("该城市没有航班");
         }
-        queryWrapper.like(flight.getDepartureTime().length() > 0, Flight::getDepartureTime, flight.getDepartureTime());
+        //根据时间进行查询
+        if(flight.getDepartureTime() != null && flight.getDepartureTime().length() > 0){
+            queryWrapper.like(Flight::getDepartureTime, flight.getDepartureTime());
+        }
         Page<Flight> flightPage = flightService.page(page, queryWrapper);
         List<Flight> flightList = flightPage.getRecords();
         if(flightList.size() == 0){
@@ -141,5 +146,71 @@ public class FlightController {
                 flight.setAircraftCode(aircraftInformation.getAircraftCode());
             }
         }
+    }
+
+    @DeleteMapping("/delete")
+    public JsonResponse delete(@RequestParam List<Long> id){
+        boolean removeById = flightService.removeByIds(id);
+        if(!removeById){
+            return JsonResponse.error("删除失败");
+        }
+        return JsonResponse.success("删除成功");
+    }
+
+
+    @PostMapping("/addFlight")
+    public JsonResponse addFlight(@RequestBody Flight flight) throws ParseException {
+        String departureTime = flight.getDepartureTime();
+        String arrivalTime = flight.getArrivalTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date departure = sdf.parse(departureTime);
+        Date arrival = sdf.parse(arrivalTime);
+        if(arrival.before(departure)){
+            return JsonResponse.error("到达时间不能早于出发时间");
+        }
+        flight.setStatus(DEFAULT_STATUS_FLIGHT);
+        flight.setModifyTime(LocalDateTime.now());
+        flight.setPublishTime(LocalDateTime.now());
+        flight.setCreator(UserHolder.getUser().getUsername());
+        flight.setModifier(UserHolder.getUser().getUsername());
+        Long departureAirportId = flight.getDepartureAirportId();
+        Long destinationAirportId = flight.getDestinationAirportId();
+        LambdaQueryWrapper<Route> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Route::getDepartureAirportId, departureAirportId);
+        queryWrapper.eq(Route::getDestinationAirportId, destinationAirportId);
+        Route route = routeService.getOne(queryWrapper);
+        flight.setRouteId(route.getId());
+        boolean save = flightService.save(flight);
+        if(save){
+            return JsonResponse.success("新增成功");
+        }
+        return JsonResponse.error("新增失败");
+    }
+
+
+    @PutMapping("/updateFlight")
+    public JsonResponse updateFlight(@RequestBody Flight flight) throws ParseException {
+        String departureTime = flight.getDepartureTime();
+        String arrivalTime = flight.getArrivalTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date departure = sdf.parse(departureTime);
+        Date arrival = sdf.parse(arrivalTime);
+        if(arrival.before(departure)){
+            return JsonResponse.error("到达时间不能早于出发时间");
+        }
+        flight.setModifyTime(LocalDateTime.now());
+        flight.setModifier(UserHolder.getUser().getUsername());
+        LambdaQueryWrapper<Route> queryWrapper = new LambdaQueryWrapper<>();
+        Long departureAirportId = flight.getDepartureAirportId();
+        Long destinationAirportId = flight.getDestinationAirportId();
+        queryWrapper.eq(Route::getDepartureAirportId, departureAirportId);
+        queryWrapper.eq(Route::getDestinationAirportId, destinationAirportId);
+        Route route = routeService.getOne(queryWrapper);
+        flight.setRouteId(route.getId());
+        boolean updated = flightService.updateById(flight);
+        if(!updated){
+            return JsonResponse.error("修改失败");
+        }
+        return JsonResponse.success("修改成功");
     }
 }

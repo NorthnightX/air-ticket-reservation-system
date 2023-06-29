@@ -10,11 +10,16 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.atrs.airticketreservationsystem.common.SystemConstants.DEFAULT_SERVICE_YEARS;
 
 @RestController
 @RequestMapping("/aircraftInformation")
@@ -70,6 +75,8 @@ public class AircraftInformationController {
      */
     @PostMapping("/addPlane")
     public JsonResponse addAircraftType(@RequestBody AircraftInformation aircraftInformation){
+        aircraftInformation.setServiceYears(DEFAULT_SERVICE_YEARS);
+        aircraftInformation.setLastMaintenanceDate(String.valueOf(LocalDateTime.now()));
         aircraftInformation.setModifyTime(LocalDateTime.now());
         aircraftInformation.setPublishTime(LocalDateTime.now());
         aircraftInformation.setCreator(UserHolder.getUser().getUsername());
@@ -88,7 +95,15 @@ public class AircraftInformationController {
      */
 
     @PutMapping("/updatePlane")
-    public JsonResponse updateAircraftType(@RequestBody AircraftInformation aircraftInformation){
+    public JsonResponse updateAircraftType(@RequestBody AircraftInformation aircraftInformation) throws ParseException {
+        String lastMaintenanceDate = aircraftInformation.getLastMaintenanceDate();
+        String purchaseDate = aircraftInformation.getPurchaseDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date lastMaintenance = sdf.parse(lastMaintenanceDate);
+        Date purchase= sdf.parse(purchaseDate);
+        if(lastMaintenance.before(purchase)){
+            return JsonResponse.error("上次检修日期不能早于购买日期");
+        }
         aircraftInformation.setModifyTime(LocalDateTime.now());
         aircraftInformation.setModifier(UserHolder.getUser().getUsername());
         boolean updated = aircraftInformationService.updateById(aircraftInformation);
@@ -96,5 +111,11 @@ public class AircraftInformationController {
             return JsonResponse.error("修改失败");
         }
         return JsonResponse.success("修改成功");
+    }
+
+    @GetMapping("/getAllPlane")
+    public JsonResponse allAirport(){
+        List<AircraftInformation> list = aircraftInformationService.list();
+        return JsonResponse.success(list);
     }
 }

@@ -66,7 +66,17 @@ public class RouteController {
         pageInfo.setRecords(collect);
         return JsonResponse.success(pageInfo);
     }
-
+    @GetMapping("/getByStartAirport")
+    public JsonResponse getByStartAirport(@RequestParam Long id){
+        LambdaQueryWrapper<Route> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Route::getDepartureAirportId, id);
+        List<Route> list = routeService.list(lambdaQueryWrapper);
+        List<Long> routeIds = list.stream().map(Route::getDestinationAirportId).toList();
+        LambdaQueryWrapper<Airport> airportLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        airportLambdaQueryWrapper.in(Airport::getId, routeIds);
+        List<Airport> airportList = airportService.list(airportLambdaQueryWrapper);
+        return JsonResponse.success(airportList);
+    }
     /**
      * 删除
      * @param id

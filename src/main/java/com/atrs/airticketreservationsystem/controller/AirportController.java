@@ -38,7 +38,6 @@ public class AirportController {
         Page<Airport> airportPage= airportService.page(page, queryWrapper);
         return JsonResponse.success(airportPage);
     }
-
     /**
      * 查询所有机场
      * @return
