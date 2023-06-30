@@ -9,4 +9,5 @@ public class LoginFormData {
     private String password;
     private String code;
     private String RedisKey;
+    private String email;
 }

@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
 import cn.hutool.json.JSONUtil;
+import com.atrs.airticketreservationsystem.common.RegexUtils;
 import com.atrs.airticketreservationsystem.config.RabbitMQConfig;
 import com.atrs.airticketreservationsystem.dto.UserDTO;
 import com.atrs.airticketreservationsystem.entity.*;
@@ -40,10 +41,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public JsonResponse login(LoginFormData loginFormData) {
-        String password = loginFormData.getPassword();
-        String phone = loginFormData.getPhoneNumber();
+        String account = loginFormData.getAccount();
+        String email = loginFormData.getEmail();
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getPhoneNumber, phone);
+        if(account != null && account.length() > 0){
+            queryWrapper.eq(User::getAccount, account);
+        }
+        else if(email != null && email.length() > 0){
+            boolean emailInvalid = RegexUtils.isEmailInvalid(email);
+            if(!emailInvalid){
+                return JsonResponse.error("邮箱格式不正确");
+            }
+            queryWrapper.eq(User::getEmail, email);
+        }
+        else{
+
+            String phone = loginFormData.getPhoneNumber();
+            boolean phoneInvalid = RegexUtils.isPhoneInvalid(phone);
+            if(!phoneInvalid){
+                return JsonResponse.error("手机号格式不正确");
+            }
+            queryWrapper.eq(User::getPhoneNumber, phone);
+        }
+        String password = loginFormData.getPassword();
         User user = this.getOne(queryWrapper);
         if(user == null){
             return JsonResponse.error("用户不存在");
