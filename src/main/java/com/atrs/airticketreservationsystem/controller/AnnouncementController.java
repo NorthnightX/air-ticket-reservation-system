@@ -1,17 +1,19 @@
 package com.atrs.airticketreservationsystem.controller;
 
-import com.atrs.airticketreservationsystem.entity.Agent;
-import com.atrs.airticketreservationsystem.entity.Announcement;
-import com.atrs.airticketreservationsystem.entity.JsonResponse;
+import cn.hutool.core.date.DateTime;
+import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.AnnouncementService;
+import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/announcement")
@@ -31,4 +33,51 @@ public class AnnouncementController {
         Page<Announcement> agentPage = announcementService.page(page, queryWrapper);
         return JsonResponse.success(agentPage);
     }
+
+    @PutMapping("/updateAnnouncement")
+    public JsonResponse updateAnnouncement(@RequestBody Announcement announcement) throws ParseException {
+        String ttl = announcement.getTtl();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date ttl1 = sdf.parse(ttl);
+        boolean before = ttl1.before(DateTime.now());
+        if(before){
+            return JsonResponse.error("如果想下架改公告请调整公告状态");
+        }
+        announcement.setModifyTime(LocalDateTime.now());
+        announcement.setModifier(UserHolder.getUser().getUsername());
+        boolean updated = announcementService.updateById(announcement);
+        if(!updated){
+            return JsonResponse.error("修改失败");
+        }
+        return JsonResponse.success("修改成功");
+    }
+
+    @PostMapping("/announcementDelete/{id}")
+    public JsonResponse deleteAnnouncement(@PathVariable Long id){
+        boolean delete = announcementService.removeById(id);
+        if(!delete){
+            return JsonResponse.error("删除失败");
+        }
+        return JsonResponse.success("删除成功");
+    }
+    @PostMapping("/addAnnouncement")
+    public JsonResponse addAnnouncement(@RequestBody Announcement announcement) throws ParseException {
+        String ttl = announcement.getTtl();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date ttl1 = sdf.parse(ttl);
+        boolean before = ttl1.before(DateTime.now());
+        if(before){
+            return JsonResponse.error("公告结束时间不能早于或等于当前时间");
+        }
+        announcement.setModifyTime(LocalDateTime.now());
+        announcement.setPublishTime(String.valueOf(LocalDateTime.now()));
+        announcement.setCreator(UserHolder.getUser().getUsername());
+        announcement.setModifier(UserHolder.getUser().getUsername());
+        boolean save = announcementService.save(announcement);
+        if(save){
+            return JsonResponse.success("新增成功");
+        }
+        return JsonResponse.error("新增失败");
+    }
+
 }

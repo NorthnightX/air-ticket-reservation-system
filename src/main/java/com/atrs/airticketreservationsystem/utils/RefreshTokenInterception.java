@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_USER_KEY;
+
 public class RefreshTokenInterception implements HandlerInterceptor {
 
     StringRedisTemplate stringRedisTemplate;
@@ -24,11 +26,12 @@ public class RefreshTokenInterception implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //1.获取请求头中的用户
         String token = request.getHeader("authorization");
+        System.out.println(token);
         if (StrUtil.isBlank(token)) {
            return true;
         }
         //2.基于token，获取redis中的用户
-        Map<Object, Object> user = stringRedisTemplate.opsForHash().entries(RedisConstants.LOGIN_USER_KEY + token);
+        Map<Object, Object> user = stringRedisTemplate.opsForHash().entries(LOGIN_USER_KEY + token);
         //3.判断用户是否存在
         if(user.isEmpty()){
             return true;
@@ -38,7 +41,7 @@ public class RefreshTokenInterception implements HandlerInterceptor {
         //6.存在，保存到ThreadLocal
         UserHolder.saveUser(adminDTO);
         //7。刷新token有效期
-        stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token,RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(LOGIN_USER_KEY + token,RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
         //8.放行
         return true;
     }

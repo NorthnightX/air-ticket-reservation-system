@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
@@ -41,12 +42,23 @@ public class AdminController {
         return adminService.login(loginForm);
     }
 
-    @GetMapping("/getMe")
+    @PostMapping("/getMe")
     public JsonResponse getMe(){
         AdminDTO user = UserHolder.getUser();
         return JsonResponse.success(user);
     }
+    @GetMapping("/test")
+    public JsonResponse test(HttpServletRequest request){
+        System.out.println(request.getHeader("Authorization"));
+        System.out.println(request.getHeader("authorization"));
+        return JsonResponse.success("a");
+    }
 
+    @GetMapping("/logout")
+    public JsonResponse logout(){
+        UserHolder.removeUser();
+        return JsonResponse.success("退出成功");
+    }
     /**
      * 删除
      * @param id

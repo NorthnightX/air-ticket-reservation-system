@@ -38,6 +38,7 @@ spring:
         min-idle: 1
         time-between-eviction-runs: 10s
     host: 8.140.17.235
+#    host: 192.168.80.128
   jackson:
     default-property-inclusion: non_null
   servlet:
