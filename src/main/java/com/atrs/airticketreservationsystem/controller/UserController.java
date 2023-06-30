@@ -101,6 +101,11 @@ public class UserController {
         return JsonResponse.success("删除成功");
     }
 
+    /**
+     * 用户登录
+     * @param loginFormData
+     * @return
+     */
     @PostMapping("/login")
     public JsonResponse loginUser(@RequestBody LoginFormData loginFormData){
         return userService.login(loginFormData);

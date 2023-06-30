@@ -66,6 +66,12 @@ public class RouteController {
         pageInfo.setRecords(collect);
         return JsonResponse.success(pageInfo);
     }
+
+    /**
+     * 根据出发机场查询以该机场为起点的航线的终点机场
+     * @param id
+     * @return
+     */
     @GetMapping("/getByStartAirport")
     public JsonResponse getByStartAirport(@RequestParam Long id){
         LambdaQueryWrapper<Route> lambdaQueryWrapper = new LambdaQueryWrapper<>();

@@ -24,6 +24,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.alibaba.fastjson.JSONPatch.OperationType.remove;
+import static com.atrs.airticketreservationsystem.common.RedisConstants.FLIGHT_MSG;
+
 @RestController
 @RequestMapping("/order")
 public class OrderController {
@@ -42,6 +45,13 @@ public class OrderController {
     @Resource
     private BaggageService baggageService;
 
+    /**
+     * 条件查询
+     * @param pageNum
+     * @param pageSize
+     * @param order
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse queryAll(
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
@@ -72,6 +82,11 @@ public class OrderController {
         return JsonResponse.success(orderPage);
     }
 
+    /**
+     * 查询订单对应航班的路线
+     * @param order
+     * @return
+     */
     private List<Route> getRoutes(Orders order) {
         LambdaQueryWrapper<Route> routeLambdaQueryWrapper = new LambdaQueryWrapper<>();
 
@@ -85,7 +100,10 @@ public class OrderController {
         return routeService.list(routeLambdaQueryWrapper);
     }
 
-
+    /**
+     * 订单回显数据赋值
+     * @param orders
+     */
     private void populateOrder(List<Orders> orders) {
         // 通过order得到flight的id
         Set<Long> flightIds = orders.stream().map(Orders::getFlightId).collect(Collectors.toSet());
@@ -137,6 +155,12 @@ public class OrderController {
         }
     }
 
+    /**
+     * 修改订单
+     * @param orders
+     * @return
+     * @throws ParseException
+     */
     @PutMapping("/updateOrder")
     public JsonResponse updateOrder(@RequestBody Orders orders) throws ParseException {
         LambdaQueryWrapper<Orders> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -148,6 +172,11 @@ public class OrderController {
         return JsonResponse.success("修改成功");
     }
 
+    /**
+     * s删除订单
+     * @param orderId
+     * @return
+     */
     @Transactional
     @PostMapping("/delete/{orderId}")
     public JsonResponse delete(@PathVariable Long orderId) {
@@ -175,42 +204,88 @@ public class OrderController {
             Orders order = orders.getOrders().get(i);
             String seatType = order.getSeatType();
             Long flightId = order.getFlightId();
-            LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            flightLambdaQueryWrapper.eq(Flight::getFlightId, flightId);
-            Flight flight = flightService.getOne(flightLambdaQueryWrapper);
-            if(flight == null){
-                return JsonResponse.error("没有该航班");
-            }
-            if (seatType.equals("0")) {
-                Integer economyClassNum = flight.getEconomyClassNum();
-                if (economyClassNum < 1 && i == 0) {
-                    return JsonResponse.error("购票失败，没有余票");
-                } else if (i > 0 &&economyClassNum < 1) {
-                    return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
-                } else {
-                    boolean update = flightService.update().setSql("economy_class_num = economy_class_num - 1").
-                            eq("flight_id", flightId).gt("economy_class_num", 0).update();
-                    if (!update && i > 0) {
-                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
-                    } else if(i == 0 && !update){
+            String redisKey = FLIGHT_MSG + flightId;
+            Map<Object, Object> flightMap = stringRedisTemplate.opsForHash().entries(redisKey);
+            //如果缓存中有
+            if(!flightMap.isEmpty()){
+                //如果乘客选择的是经济仓
+                if(seatType.equals("0")){
+                    Integer economyClassNum = (Integer) flightMap.get("economyClassNum");
+                    if (economyClassNum < 1 && i == 0) {
                         return JsonResponse.error("购票失败，没有余票");
+                    } else if (i > 0 &&economyClassNum < 1) {
+                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                    }
+                    else{
+                        stringRedisTemplate.opsForHash().put(redisKey, "economyClassNum", economyClassNum - 1);
+                        boolean update = flightService.update().setSql("economy_class_num = economy_class_num - 1").
+                                eq("flight_id", flightId).gt("economy_class_num", 0).update();
+                        if (!update && i > 0) {
+                            return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                        } else if(i == 0 && !update){
+                            return JsonResponse.error("购票失败，没有余票");
+                        }
+                    }
+                }
+                //如果乘客选择的是头等舱
+                else if(seatType.equals("1")){
+                    Integer firstClassNum = (Integer) flightMap.get("firstClassNum");
+                    if (firstClassNum < 1 && i == 0) {
+                        return JsonResponse.error("购票失败，没有余票");
+                    } else if (i > 0 && firstClassNum < 1) {
+                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                    }
+                    else {
+                        stringRedisTemplate.opsForHash().put(redisKey, "firstClassNum", firstClassNum - 1);
+                        boolean update = flightService.update().setSql("first_class_num = first_class_num - 1").
+                                eq("flight_id", flightId).gt("first_class_num", 0).update();
+                        if (!update && i > 0) {
+                            return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                        } else if(i == 0 && !update){
+                            return JsonResponse.error("购票失败，没有余票");
+                        }
                     }
                 }
             }
-            else if(seatType.equals("1")){
-                Integer firstClassNum = flight.getFirstClassNum();
-                if (firstClassNum < 1 && i == 0) {
-                    return JsonResponse.error("购票失败，没有余票");
-                } else if (i > 0 && firstClassNum < 1) {
-                    return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+            //缓存中没有
+            else{
+                LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                flightLambdaQueryWrapper.eq(Flight::getFlightId, flightId);
+                Flight flight = flightService.getOne(flightLambdaQueryWrapper);
+                if(flight == null){
+                    return JsonResponse.error("没有该航班");
                 }
-                else {
-                    boolean update = flightService.update().setSql("first_class_num = first_class_num - 1").
-                            eq("flight_id", flightId).gt("first_class_num", 0).update();
-                    if (!update && i > 0) {
-                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
-                    } else if(i == 0 && !update){
+                if (seatType.equals("0")) {
+                    Integer economyClassNum = flight.getEconomyClassNum();
+                    if (economyClassNum < 1 && i == 0) {
                         return JsonResponse.error("购票失败，没有余票");
+                    } else if (i > 0 &&economyClassNum < 1) {
+                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                    } else {
+                        boolean update = flightService.update().setSql("economy_class_num = economy_class_num - 1").
+                                eq("flight_id", flightId).gt("economy_class_num", 0).update();
+                        if (!update && i > 0) {
+                            return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                        } else if(i == 0 && !update){
+                            return JsonResponse.error("购票失败，没有余票");
+                        }
+                    }
+                }
+                else if(seatType.equals("1")){
+                    Integer firstClassNum = flight.getFirstClassNum();
+                    if (firstClassNum < 1 && i == 0) {
+                        return JsonResponse.error("购票失败，没有余票");
+                    } else if (i > 0 && firstClassNum < 1) {
+                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                    }
+                    else {
+                        boolean update = flightService.update().setSql("first_class_num = first_class_num - 1").
+                                eq("flight_id", flightId).gt("first_class_num", 0).update();
+                        if (!update && i > 0) {
+                            return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                        } else if(i == 0 && !update){
+                            return JsonResponse.error("购票失败，没有余票");
+                        }
                     }
                 }
             }
@@ -223,6 +298,62 @@ public class OrderController {
             orderService.save(orderSuccess);
         }
         return JsonResponse.success("购买完成");
+    }
+
+    /**
+     * 取消订单
+     * @param orderId
+     * @return
+     */
+    @Transactional
+    @PostMapping("/returnTicket/{orderId}")
+    public JsonResponse returnTicket(@PathVariable Long orderId){
+        //先取消托运订单
+        baggageService.update().setSql("status = 0").
+                eq("ticket_id", orderId).update();
+        //取消订单
+        boolean update = orderService.update().setSql("is_cancelled = 0").
+                eq("order_id", orderId).update();
+        if(!update) {
+            return JsonResponse.error("网络异常");
+        }
+        return JsonResponse.success("退票成功");
+    }
+
+    /**
+     * 升舱
+     * @param orders
+     * @return
+     */
+    @Transactional
+    @PostMapping("/upgrade")
+    public JsonResponse upgrade(@RequestBody Orders orders){
+        //先将原先的升舱字段改为1
+        boolean update = orderService.update().setSql("is_upgrade = 1").
+                eq("order_id", orders.getOrderId()).update();
+        if(!update){
+            return JsonResponse.error("网络异常");
+        }
+        //更改用户消费
+        //生成新的升舱机票
+        Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
+        boolean setUpdatedOrderId = orderService.update().setSql("updated_order_id=" + snowflakeId).
+                eq("order_id", orders.getOrderId()).update();
+        if(!setUpdatedOrderId){
+            return JsonResponse.error("网络异常");
+        }
+        boolean updateBaggage = baggageService.update().setSql("ticket_id=" + snowflakeId).
+                eq("ticket_id", orders.getOrderId()).update();
+        if(!updateBaggage){
+            return JsonResponse.error("网络异常");
+        }
+        orders.setOrderId(snowflakeId.nextId());
+        orders.setIsUpgradeOrder(1);
+        boolean save = orderService.save(orders);
+        if(save){
+            return JsonResponse.success("升舱成功");
+        }
+        return JsonResponse.error("网络异常");
     }
 
 

@@ -27,6 +27,13 @@ public class AircraftInformationController {
     @Resource
     private AircraftTypeService aircraftTypeService;
 
+    /**
+     * 飞机信息条件分页查询
+     * @param pageNum
+     * @param pageSize
+     * @param aircraftInformation
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1") Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -87,7 +94,7 @@ public class AircraftInformationController {
     }
 
     /**
-     * 修改飞机
+     * 修改飞机信息
      * @param aircraftInformation
      * @return
      */
@@ -111,6 +118,10 @@ public class AircraftInformationController {
         return JsonResponse.success("修改成功");
     }
 
+    /**
+     * 查询所有飞机信息
+     * @return
+     */
     @GetMapping("/getAllPlane")
     public JsonResponse allAirport(){
         List<AircraftInformation> list = aircraftInformationService.list();

@@ -18,6 +18,11 @@ public class BaggageController {
     @Resource
     private BaggageService baggageService;
 
+    /**
+     * 删除托运订单
+     * @param baggageId
+     * @return
+     */
     @PostMapping("/delete/{baggageId}")
     public JsonResponse delete(@PathVariable Long baggageId){
         LambdaQueryWrapper<Baggage> queryWrapper = new LambdaQueryWrapper<>();
@@ -29,7 +34,11 @@ public class BaggageController {
         return JsonResponse.success("删除成功");
     }
 
-
+    /**
+     * 修改托运订单
+     * @param baggage
+     * @return
+     */
     @PutMapping("/updateBaggage")
     public JsonResponse updateAdmin(@RequestBody Baggage baggage){
         boolean updated = baggageService.updateById(baggage);
@@ -39,7 +48,13 @@ public class BaggageController {
         return JsonResponse.success("修改成功");
     }
 
-
+    /**
+     * 查询
+     * @param pageNum
+     * @param pageSize
+     * @param baggage
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1")Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10")Integer pageSize,

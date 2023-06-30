@@ -21,7 +21,7 @@ public class AircraftTypeController {
     private AircraftTypeService aircraftTypeService;
 
     /**
-     * 分页查询
+     * 飞机类型分页查询
      * @param pageNum
      * @param pageSize
      * @param aircraftType
@@ -39,7 +39,7 @@ public class AircraftTypeController {
     }
 
     /**
-     * 查询所有
+     * 查询所有飞机类型
      * @return
      */
     @GetMapping("/queryAllModel")

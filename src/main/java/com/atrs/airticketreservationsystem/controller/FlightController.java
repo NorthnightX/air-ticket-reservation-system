@@ -1,6 +1,8 @@
 package com.atrs.airticketreservationsystem.controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.AircraftInformationService;
 import com.atrs.airticketreservationsystem.service.AirportService;
@@ -17,9 +19,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import static com.atrs.airticketreservationsystem.common.RedisConstants.FLIGHT_MSG;
+
+import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
 import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController
@@ -37,7 +41,7 @@ public class FlightController {
     private StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 分页
+     * 航班查询
      * @param pageNum
      * @param pageSize
      * @param flight
@@ -49,7 +53,6 @@ public class FlightController {
                              Flight flight) {
         Page<Flight> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Flight> queryWrapper = new LambdaQueryWrapper<>();
-
         // 构建航班查询条件
         if (flight.getAircraftCode() != null && !flight.getAircraftCode().isEmpty()) {
             LambdaQueryWrapper<AircraftInformation> aircraftInformationLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -73,15 +76,19 @@ public class FlightController {
             queryWrapper.like(Flight::getDepartureTime, flight.getDepartureTime());
         }
         //如果是用户，只展示正常状态和推迟状态的飞机
-        Long vipStatus = UserHolder.getUser().getVipStatus();
-        System.out.println(UserHolder.getUser());
-        if(!Objects.equals(vipStatus, ADMIN_VIP_STATUS)){
+        UserDTO user = UserHolder.getUser();
+        if(user == null){
             List<Integer> statusList = new ArrayList<>(Arrays.asList(NOT_FLY, DELAY));
             queryWrapper.in(Flight::getStatus, statusList);
+        } else{
+            Long vipStatus = UserHolder.getUser().getVipStatus();
+            if(!Objects.equals(vipStatus, ADMIN_VIP_STATUS)){
+                List<Integer> statusList = new ArrayList<>(Arrays.asList(NOT_FLY, DELAY));
+                queryWrapper.in(Flight::getStatus, statusList);
+            }
         }
         Page<Flight> flightPage = flightService.page(page, queryWrapper);
         List<Flight> flightList = flightPage.getRecords();
-
         if(flightList.size() == 0){
             return JsonResponse.error("没有符合条件的航班");
         }
@@ -151,9 +158,37 @@ public class FlightController {
             if (aircraftInformation != null) {
                 flight.setAircraftCode(aircraftInformation.getAircraftCode());
             }
+            Map<String, Object> flightMap = BeanUtil.beanToMap(
+                    flight, new HashMap<>(), CopyOptions.create().
+                            setIgnoreNullValue(true).
+                            setFieldValueEditor((fieldName, fieldValue) -> {
+                                if (fieldValue == null) {
+                                    fieldValue = "0";
+                                } else {
+                                    fieldValue = fieldValue + "";
+                                }
+                                return fieldValue;
+                            }));
+//            String departureTime = flight.getDepartureTime();
+//            String[] s = departureTime.split(" ");
+//            String redisKey = FLIGHT_MSG + flightMap.get("departureCity") + ":" +
+//                    flightMap.get("destinationCity") + ":" + s[0];
+//            stringRedisTemplate.opsForHash().putAll(redisKey, flightMap);
+//            stringRedisTemplate.expire(redisKey, FLIGHT_TTL, TimeUnit.DAYS);
+            String redisKey = FLIGHT_MSG + flightMap.get("flightId");
+            stringRedisTemplate.opsForHash().putAll(redisKey, flightMap);
+            stringRedisTemplate.expire(redisKey, FLIGHT_TTL, TimeUnit.DAYS);
+
+
         }
+
     }
 
+    /**
+     * 删除航班
+     * @param id
+     * @return
+     */
     @DeleteMapping("/delete")
     public JsonResponse delete(@RequestParam List<Long> id){
         boolean removeById = flightService.removeByIds(id);
@@ -163,7 +198,12 @@ public class FlightController {
         return JsonResponse.success("删除成功");
     }
 
-
+    /**
+     * 新增航班
+     * @param flight
+     * @return
+     * @throws ParseException
+     */
     @PostMapping("/addFlight")
     public JsonResponse addFlight(@RequestBody Flight flight) throws ParseException {
         String departureTime = flight.getDepartureTime();
@@ -193,7 +233,12 @@ public class FlightController {
         return JsonResponse.error("新增失败");
     }
 
-
+    /**
+     * 修改航班
+     * @param flight
+     * @return
+     * @throws ParseException
+     */
     @PutMapping("/updateFlight")
     public JsonResponse updateFlight(@RequestBody Flight flight) throws ParseException {
         String departureTime = flight.getDepartureTime();

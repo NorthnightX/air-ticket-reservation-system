@@ -12,6 +12,8 @@ public class Baggage {
   private Long ticketId;
   private Double baggageWeight;
   private Long baggageItemCount;
+  private Double price;
+  private Integer status;
 
 
 }

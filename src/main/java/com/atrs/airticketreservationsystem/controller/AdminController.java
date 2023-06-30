@@ -33,7 +33,6 @@ public class AdminController {
     /**
      * 登录
      * @param loginForm
-     *
      * @return
      */
     @PostMapping("/login")
@@ -41,12 +40,20 @@ public class AdminController {
         return adminService.login(loginForm);
     }
 
+    /**
+     * 获得当前登录的用户的信息
+     * @return
+     */
     @PostMapping("/getMe")
     public JsonResponse getMe(){
         UserDTO user = UserHolder.getUser();
         return JsonResponse.success(user);
     }
 
+    /**
+     * 登出
+     * @return
+     */
     @GetMapping("/logout")
     public JsonResponse logout(){
         UserHolder.removeUser();
@@ -117,6 +124,11 @@ public class AdminController {
         return JsonResponse.success(administratorPage);
     }
 
+    /**
+     * 新增管理员
+     * @param administrator
+     * @return
+     */
     @PostMapping("/addAdministrator")
     public JsonResponse addAdministrator(@RequestBody Administrator administrator){
         administrator.setStatus(DEFAULT_STATUS);

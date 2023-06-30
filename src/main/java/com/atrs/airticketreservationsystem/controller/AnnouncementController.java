@@ -21,6 +21,13 @@ public class AnnouncementController {
     @Resource
     private AnnouncementService announcementService;
 
+    /**
+     * 查询公告
+     * @param pageNum
+     * @param pageSize
+     * @param announcement
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1")Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10")Integer pageSize,
@@ -34,6 +41,12 @@ public class AnnouncementController {
         return JsonResponse.success(agentPage);
     }
 
+    /**
+     * 修改公告
+     * @param announcement
+     * @return
+     * @throws ParseException
+     */
     @PutMapping("/updateAnnouncement")
     public JsonResponse updateAnnouncement(@RequestBody Announcement announcement) throws ParseException {
         String ttl = announcement.getTtl();
@@ -52,6 +65,11 @@ public class AnnouncementController {
         return JsonResponse.success("修改成功");
     }
 
+    /**
+     * 删除公告
+     * @param id
+     * @return
+     */
     @PostMapping("/announcementDelete/{id}")
     public JsonResponse deleteAnnouncement(@PathVariable Long id){
         boolean delete = announcementService.removeById(id);
@@ -60,6 +78,13 @@ public class AnnouncementController {
         }
         return JsonResponse.success("删除成功");
     }
+
+    /**
+     * 新增公告
+     * @param announcement
+     * @return
+     * @throws ParseException
+     */
     @PostMapping("/addAnnouncement")
     public JsonResponse addAnnouncement(@RequestBody Announcement announcement) throws ParseException {
         String ttl = announcement.getTtl();
