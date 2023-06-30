@@ -2,17 +2,20 @@ package com.atrs.airticketreservationsystem.controller;
 
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.*;
+import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +37,8 @@ public class OrderController {
     private AirportService airportService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private BaggageService baggageService;
 
     @GetMapping("/queryAll")
     public JsonResponse queryAll(
@@ -128,6 +133,32 @@ public class OrderController {
                 }
             }
         }
+    }
+
+    @PutMapping("/updateOrder")
+    public JsonResponse updateOrder(@RequestBody Orders orders) throws ParseException {
+        LambdaQueryWrapper<Orders> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Orders::getOrderId, orders.getOrderId());
+        boolean updated = orderService.update(orders, lambdaQueryWrapper);
+        if(!updated){
+            return JsonResponse.error("修改失败");
+        }
+        return JsonResponse.success("修改成功");
+    }
+
+    @Transactional
+    @PostMapping("/delete/{orderId}")
+    public JsonResponse delete(@PathVariable Long orderId){
+        LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Baggage> baggageLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        ordersLambdaQueryWrapper.eq(Orders::getOrderId, orderId);
+        baggageLambdaQueryWrapper.eq(Baggage::getTicketId, orderId);
+        baggageService.remove(baggageLambdaQueryWrapper);
+        boolean delete = orderService.remove(ordersLambdaQueryWrapper);
+        if(!delete){
+            return JsonResponse.error("删除失败");
+        }
+        return JsonResponse.success("删除成功");
     }
 
 }

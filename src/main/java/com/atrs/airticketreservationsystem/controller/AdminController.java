@@ -47,12 +47,6 @@ public class AdminController {
         AdminDTO user = UserHolder.getUser();
         return JsonResponse.success(user);
     }
-    @GetMapping("/test")
-    public JsonResponse test(HttpServletRequest request){
-        System.out.println(request.getHeader("Authorization"));
-        System.out.println(request.getHeader("authorization"));
-        return JsonResponse.success("a");
-    }
 
     @GetMapping("/logout")
     public JsonResponse logout(){
