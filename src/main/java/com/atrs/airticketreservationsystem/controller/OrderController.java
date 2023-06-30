@@ -210,14 +210,14 @@ public class OrderController {
             if(!flightMap.isEmpty()){
                 //如果乘客选择的是经济仓
                 if(seatType.equals("0")){
-                    Integer economyClassNum = (Integer) flightMap.get("economyClassNum");
+                    Integer economyClassNum = Integer.parseInt((String) flightMap.get("economyClassNum"));
                     if (economyClassNum < 1 && i == 0) {
                         return JsonResponse.error("购票失败，没有余票");
                     } else if (i > 0 &&economyClassNum < 1) {
                         return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
                     }
                     else{
-                        stringRedisTemplate.opsForHash().put(redisKey, "economyClassNum", economyClassNum - 1);
+                        stringRedisTemplate.opsForHash().put(redisKey, "economyClassNum", String.valueOf(economyClassNum - 1));
                         boolean update = flightService.update().setSql("economy_class_num = economy_class_num - 1").
                                 eq("flight_id", flightId).gt("economy_class_num", 0).update();
                         if (!update && i > 0) {
@@ -229,14 +229,14 @@ public class OrderController {
                 }
                 //如果乘客选择的是头等舱
                 else if(seatType.equals("1")){
-                    Integer firstClassNum = (Integer) flightMap.get("firstClassNum");
+                    Integer firstClassNum = Integer.parseInt((String) flightMap.get("firstClassNum"));
                     if (firstClassNum < 1 && i == 0) {
                         return JsonResponse.error("购票失败，没有余票");
                     } else if (i > 0 && firstClassNum < 1) {
                         return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
                     }
                     else {
-                        stringRedisTemplate.opsForHash().put(redisKey, "firstClassNum", firstClassNum - 1);
+                        stringRedisTemplate.opsForHash().put(redisKey, "firstClassNum", String.valueOf(firstClassNum - 1));
                         boolean update = flightService.update().setSql("first_class_num = first_class_num - 1").
                                 eq("flight_id", flightId).gt("first_class_num", 0).update();
                         if (!update && i > 0) {
