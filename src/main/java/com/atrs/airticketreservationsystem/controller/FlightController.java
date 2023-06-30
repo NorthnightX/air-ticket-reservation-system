@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import static com.atrs.airticketreservationsystem.common.RedisConstants.FLIGHT_MSG;
-import static com.atrs.airticketreservationsystem.common.SystemConstants.DEFAULT_STATUS_FLIGHT;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController
 @RequestMapping("/flight")
@@ -72,8 +72,16 @@ public class FlightController {
         if(flight.getDepartureTime() != null && flight.getDepartureTime().length() > 0){
             queryWrapper.like(Flight::getDepartureTime, flight.getDepartureTime());
         }
+        //如果是用户，只展示正常状态和推迟状态的飞机
+        Long vipStatus = UserHolder.getUser().getVipStatus();
+        System.out.println(UserHolder.getUser());
+        if(!Objects.equals(vipStatus, ADMIN_VIP_STATUS)){
+            List<Integer> statusList = new ArrayList<>(Arrays.asList(NOT_FLY, DELAY));
+            queryWrapper.in(Flight::getStatus, statusList);
+        }
         Page<Flight> flightPage = flightService.page(page, queryWrapper);
         List<Flight> flightList = flightPage.getRecords();
+
         if(flightList.size() == 0){
             return JsonResponse.error("没有符合条件的航班");
         }

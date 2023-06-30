@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.ADMIN_VIP_STATUS;
 
 @Service
 public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> implements AdminService {
@@ -61,6 +62,7 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
         }
         UserDTO userDTO = new UserDTO();
         BeanUtils.copyProperties(admin, userDTO);
+        userDTO.setVipStatus(ADMIN_VIP_STATUS);
         String token = UUID.randomUUID().toString();
         Map<String, Object> adminMap = BeanUtil.beanToMap(
                 userDTO, new HashMap<>(), CopyOptions.create().
