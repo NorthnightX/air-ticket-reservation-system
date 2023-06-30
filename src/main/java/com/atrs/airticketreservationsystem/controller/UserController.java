@@ -110,4 +110,30 @@ public class UserController {
     public JsonResponse loginUser(@RequestBody LoginFormData loginFormData){
         return userService.login(loginFormData);
     }
+
+    /**
+     * 注册
+     * @param user
+     * @return
+     */
+    @PostMapping("/register")
+    public JsonResponse register(@RequestBody User user){
+        return userService.register(user);
+    }
+
+    /**
+     * 用户激活
+     * @param id
+     * @return
+     */
+    @GetMapping("/activeUser/{id}")
+    public JsonResponse activeUser(Integer id){
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userLambdaQueryWrapper.eq(User::getId, id);
+        User user = userService.getOne(userLambdaQueryWrapper);
+        user.setAccountStatus("1");
+        boolean save = userService.save(user);
+        return save ? JsonResponse.success("激活成功") : JsonResponse.error("激活失败");
+    }
+
 }

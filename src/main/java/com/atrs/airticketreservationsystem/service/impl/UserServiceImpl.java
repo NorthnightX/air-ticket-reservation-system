@@ -3,11 +3,14 @@ package com.atrs.airticketreservationsystem.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
+import cn.hutool.json.JSONUtil;
+import com.atrs.airticketreservationsystem.config.RabbitMQConfig;
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.mapper.UserMapper;
 import com.atrs.airticketreservationsystem.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -20,11 +23,20 @@ import java.util.concurrent.TimeUnit;
 
 import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_USER_KEY;
 import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_USER_TTL;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
     StringRedisTemplate stringRedisTemplate;
+    @Resource
+    RabbitTemplate rabbitTemplate;
+
+    /**
+     * 登录
+     * @param loginFormData
+     * @return
+     */
     @Override
     public JsonResponse login(LoginFormData loginFormData) {
         String password = loginFormData.getPassword();
@@ -39,7 +51,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(!user.getPassword().equals(md5Password)){
             return JsonResponse.error("密码错误");
         }
-        if(user.getAccountStatus().equals("0")){
+        if(user.getAccountStatus().equals(ACCOUNT_STATUS_BAN)){
             return JsonResponse.error("用户封禁");
         }
         UserDTO userDTO = new UserDTO();
@@ -59,5 +71,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
         stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
         return JsonResponse.success(token);
+    }
+
+    @Override
+    public JsonResponse register(User user) {
+        //密码加密
+        String password = user.getPassword();
+        String md5Password = MD5.create().digestHex(password);
+        //设置默认值
+        user.setAccountStatus(DEFAULT_REGISTER_ACCOUNT_STATUS);
+        user.setVipStatus(DEFAULT_ACCOUNT_VIP_LEVEL);
+        user.setTotalExpenses(DEFAULT_ACCOUNT_TOTAL_EXPENSES);
+        boolean saveUser = this.save(user);
+        Long id = user.getId();
+        if(id < 0){
+            return JsonResponse.error("注册失败");
+        }
+        Email email = new Email("激活用户",user.getEmail(),"点击此链接完成验证:http://localhost:8081/atrs/user/activeUser/" + id);
+        String jsonStr = JSONUtil.toJsonStr(email);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EMAIL_EXCHANGE, RabbitMQConfig.EMAIL_KEY,jsonStr);
+        if(saveUser){
+            return JsonResponse.success("注册成功");
+        }
+        return JsonResponse.error("注册失败");
+
     }
 }
