@@ -335,25 +335,25 @@ public class OrderController {
             return JsonResponse.error("网络异常");
         }
         //更改用户消费
+
         //生成新的升舱机票
+        Long orderId = orders.getOrderId();
         Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
-        boolean setUpdatedOrderId = orderService.update().setSql("updated_order_id=" + snowflakeId).
-                eq("order_id", orders.getOrderId()).update();
+        long id = snowflakeId.nextId();
+        orders.setOrderId(id);
+        orders.setIsUpgradeOrder(1);
+        boolean save = orderService.save(orders);
+        if(!save){
+            return JsonResponse.success("网络异常");
+        }
+        baggageService.update().setSql("ticket_id=" + id).
+                eq("ticket_id", orderId).update();
+        boolean setUpdatedOrderId = orderService.update().setSql("upgrade_order_id=" + id).
+                eq("order_id", orderId).update();
         if(!setUpdatedOrderId){
             return JsonResponse.error("网络异常");
         }
-        boolean updateBaggage = baggageService.update().setSql("ticket_id=" + snowflakeId).
-                eq("ticket_id", orders.getOrderId()).update();
-        if(!updateBaggage){
-            return JsonResponse.error("网络异常");
-        }
-        orders.setOrderId(snowflakeId.nextId());
-        orders.setIsUpgradeOrder(1);
-        boolean save = orderService.save(orders);
-        if(save){
-            return JsonResponse.success("升舱成功");
-        }
-        return JsonResponse.error("网络异常");
+        return JsonResponse.success("升舱成功");
     }
 
 
