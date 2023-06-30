@@ -4,14 +4,9 @@ package com.atrs.airticketreservationsystem.config;
 import com.atrs.airticketreservationsystem.utils.LoginInterceptor;
 import com.atrs.airticketreservationsystem.utils.RefreshTokenInterception;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 

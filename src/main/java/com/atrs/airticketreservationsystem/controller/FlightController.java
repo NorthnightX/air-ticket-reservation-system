@@ -1,7 +1,6 @@
 package com.atrs.airticketreservationsystem.controller;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.bean.copier.CopyOptions;
+
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.AircraftInformationService;
 import com.atrs.airticketreservationsystem.service.AirportService;
@@ -10,7 +9,6 @@ import com.atrs.airticketreservationsystem.service.RouteService;
 import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
