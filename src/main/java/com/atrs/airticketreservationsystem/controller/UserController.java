@@ -3,6 +3,7 @@ package com.atrs.airticketreservationsystem.controller;
 import cn.hutool.crypto.digest.MD5;
 
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
+import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.entity.User;
 import com.atrs.airticketreservationsystem.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -98,5 +99,10 @@ public class UserController {
             return JsonResponse.error("删除失败");
         }
         return JsonResponse.success("删除成功");
+    }
+
+    @PostMapping("/login")
+    public JsonResponse loginUser(@RequestBody LoginFormData loginFormData){
+        return userService.login(loginFormData);
     }
 }

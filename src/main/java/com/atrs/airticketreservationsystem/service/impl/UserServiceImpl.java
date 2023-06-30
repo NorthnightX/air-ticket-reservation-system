@@ -1,11 +1,63 @@
 package com.atrs.airticketreservationsystem.service.impl;
 
-import com.atrs.airticketreservationsystem.entity.User;
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.crypto.digest.MD5;
+import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.mapper.UserMapper;
 import com.atrs.airticketreservationsystem.service.UserService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_USER_KEY;
+import static com.atrs.airticketreservationsystem.common.RedisConstants.LOGIN_USER_TTL;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+    @Resource
+    StringRedisTemplate stringRedisTemplate;
+    @Override
+    public JsonResponse login(LoginFormData loginFormData) {
+        String password = loginFormData.getPassword();
+        String phone = loginFormData.getPhoneNumber();
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getPhoneNumber, phone);
+        User user = this.getOne(queryWrapper);
+        if(user == null){
+            return JsonResponse.error("用户不存在");
+        }
+        String md5Password = MD5.create().digestHex(password);
+        if(!user.getPassword().equals(md5Password)){
+            return JsonResponse.error("密码错误");
+        }
+        if(user.getAccountStatus().equals("0")){
+            return JsonResponse.error("用户封禁");
+        }
+        UserDTO userDTO = new UserDTO();
+        BeanUtils.copyProperties(user,userDTO);
+        String token = UUID.randomUUID().toString();
+        Map<String, Object> userMap = BeanUtil.beanToMap(
+                userDTO, new HashMap<>(), CopyOptions.create().
+                        setIgnoreNullValue(true).
+                        setFieldValueEditor((fieldName, fieldValue) -> {
+                            if (fieldValue == null) {
+                                fieldValue = "0";
+                            } else {
+                                fieldValue = fieldValue + "";
+                            }
+                            return fieldValue;
+                        }));
+        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
+        return JsonResponse.success(token);
+    }
 }

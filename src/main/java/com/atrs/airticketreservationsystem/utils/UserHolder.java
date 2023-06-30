@@ -1,15 +1,15 @@
 package com.atrs.airticketreservationsystem.utils;
 
-import com.atrs.airticketreservationsystem.entity.AdminDTO;
+import com.atrs.airticketreservationsystem.entity.UserDTO;
 
 public class UserHolder {
-    private static final ThreadLocal<AdminDTO> tl = new ThreadLocal<>();
+    private static final ThreadLocal<UserDTO> tl = new ThreadLocal<>();
 
-    public static void saveUser(AdminDTO user){
+    public static void saveUser(UserDTO user){
         tl.set(user);
     }
 
-    public static AdminDTO getUser(){
+    public static UserDTO getUser(){
         return tl.get();
     }
 

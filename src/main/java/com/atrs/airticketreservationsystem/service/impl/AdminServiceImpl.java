@@ -5,7 +5,7 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.common.ImageVerificationCode;
 
-import com.atrs.airticketreservationsystem.entity.AdminDTO;
+import com.atrs.airticketreservationsystem.entity.UserDTO;
 import com.atrs.airticketreservationsystem.entity.Administrator;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;
@@ -59,11 +59,11 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Administrator> im
         if(admin.getStatus().equals("0")){
             return JsonResponse.error("用户封禁");
         }
-        AdminDTO adminDTO = new AdminDTO();
-        BeanUtils.copyProperties(admin,adminDTO);
+        UserDTO userDTO = new UserDTO();
+        BeanUtils.copyProperties(admin, userDTO);
         String token = UUID.randomUUID().toString();
         Map<String, Object> adminMap = BeanUtil.beanToMap(
-                adminDTO, new HashMap<>(), CopyOptions.create().
+                userDTO, new HashMap<>(), CopyOptions.create().
                         setIgnoreNullValue(true).
                         setFieldValueEditor((fieldName, fieldValue) -> {
                             if (fieldValue == null) {

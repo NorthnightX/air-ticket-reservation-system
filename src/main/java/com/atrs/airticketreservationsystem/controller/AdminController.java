@@ -43,7 +43,7 @@ public class AdminController {
 
     @PostMapping("/getMe")
     public JsonResponse getMe(){
-        AdminDTO user = UserHolder.getUser();
+        UserDTO user = UserHolder.getUser();
         return JsonResponse.success(user);
     }
 

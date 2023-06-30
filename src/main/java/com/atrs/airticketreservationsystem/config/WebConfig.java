@@ -35,7 +35,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/admin/code",
                         "/admin/login",
-                        "/admin/logout"
+                        "/admin/logout",
+                        "/user/login",
+                        "/agent/login",
+                        "/user/register",
+                        "/flight/queryAll"
                 ).order(100);
         registry.addInterceptor(new RefreshTokenInterception(stringRedisTemplate)).addPathPatterns(
                 "/**"

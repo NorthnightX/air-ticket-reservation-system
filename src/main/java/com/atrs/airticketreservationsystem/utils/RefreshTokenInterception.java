@@ -3,7 +3,7 @@ package com.atrs.airticketreservationsystem.utils;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.atrs.airticketreservationsystem.common.RedisConstants;
-import com.atrs.airticketreservationsystem.entity.AdminDTO;
+import com.atrs.airticketreservationsystem.entity.UserDTO;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -37,9 +37,9 @@ public class RefreshTokenInterception implements HandlerInterceptor {
             return true;
         }
         //5.将查询到的数据转为user对象
-        AdminDTO adminDTO = BeanUtil.fillBeanWithMap(user, new AdminDTO(), false);
+        UserDTO userDTO = BeanUtil.fillBeanWithMap(user, new UserDTO(), false);
         //6.存在，保存到ThreadLocal
-        UserHolder.saveUser(adminDTO);
+        UserHolder.saveUser(userDTO);
         //7。刷新token有效期
         stringRedisTemplate.expire(LOGIN_USER_KEY + token,RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
         //8.放行

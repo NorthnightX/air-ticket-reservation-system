@@ -1,14 +1,23 @@
 package com.atrs.airticketreservationsystem.controller;
 
+import cn.hutool.core.lang.Snowflake;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.RandomUtil;
+import com.atrs.airticketreservationsystem.dto.OrderDto;
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.*;
+import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.api.R;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,7 +142,7 @@ public class OrderController {
         LambdaQueryWrapper<Orders> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Orders::getOrderId, orders.getOrderId());
         boolean updated = orderService.update(orders, lambdaQueryWrapper);
-        if(!updated){
+        if (!updated) {
             return JsonResponse.error("修改失败");
         }
         return JsonResponse.success("修改成功");
@@ -141,17 +150,80 @@ public class OrderController {
 
     @Transactional
     @PostMapping("/delete/{orderId}")
-    public JsonResponse delete(@PathVariable Long orderId){
+    public JsonResponse delete(@PathVariable Long orderId) {
         LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
         LambdaQueryWrapper<Baggage> baggageLambdaQueryWrapper = new LambdaQueryWrapper<>();
         ordersLambdaQueryWrapper.eq(Orders::getOrderId, orderId);
         baggageLambdaQueryWrapper.eq(Baggage::getTicketId, orderId);
         baggageService.remove(baggageLambdaQueryWrapper);
         boolean delete = orderService.remove(ordersLambdaQueryWrapper);
-        if(!delete){
+        if (!delete) {
             return JsonResponse.error("删除失败");
         }
         return JsonResponse.success("删除成功");
     }
+
+    /**
+     * 买票
+     * @param orders
+     * @return
+     */
+    @Transactional
+    @PostMapping("/purchase")
+    public JsonResponse purchase(@RequestBody OrderDto orders) {
+        for(int i = 0; i < orders.getOrders().size(); i++){
+            Orders order = orders.getOrders().get(i);
+            String seatType = order.getSeatType();
+            Long flightId = order.getFlightId();
+            LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            flightLambdaQueryWrapper.eq(Flight::getFlightId, flightId);
+            Flight flight = flightService.getOne(flightLambdaQueryWrapper);
+            if(flight == null){
+                return JsonResponse.error("没有该航班");
+            }
+            if (seatType.equals("0")) {
+                Integer economyClassNum = flight.getEconomyClassNum();
+                if (economyClassNum < 1 && i == 0) {
+                    return JsonResponse.error("购票失败，没有余票");
+                } else if (i > 0 &&economyClassNum < 1) {
+                    return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                } else {
+                    boolean update = flightService.update().setSql("economy_class_num = economy_class_num - 1").
+                            eq("flight_id", flightId).gt("economy_class_num", 0).update();
+                    if (!update && i > 0) {
+                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                    } else if(i == 0 && !update){
+                        return JsonResponse.error("购票失败，没有余票");
+                    }
+                }
+            }
+            else if(seatType.equals("1")){
+                Integer firstClassNum = flight.getFirstClassNum();
+                if (firstClassNum < 1 && i == 0) {
+                    return JsonResponse.error("购票失败，没有余票");
+                } else if (i > 0 && firstClassNum < 1) {
+                    return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                }
+                else {
+                    boolean update = flightService.update().setSql("first_class_num = first_class_num - 1").
+                            eq("flight_id", flightId).gt("first_class_num", 0).update();
+                    if (!update && i > 0) {
+                        return JsonResponse.error("票已售空,购买已购买票" + i + 1 + "张");
+                    } else if(i == 0 && !update){
+                        return JsonResponse.error("购票失败，没有余票");
+                    }
+                }
+            }
+            Orders orderSuccess = new Orders();
+            BeanUtils.copyProperties(order, orderSuccess);
+            Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
+            orderSuccess.setOrderId(snowflakeId.nextId());
+            orderSuccess.setBookingPerson(UserHolder.getUser().getUsername());
+            orderSuccess.setOrderTime(String.valueOf(LocalDateTime.now()));
+            orderService.save(orderSuccess);
+        }
+        return JsonResponse.success("购买完成");
+    }
+
 
 }
