@@ -5,7 +5,7 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
 import com.atrs.airticketreservationsystem.common.ImageVerificationCode;
 
-import com.atrs.airticketreservationsystem.entity.UserDTO;
+import com.atrs.airticketreservationsystem.dto.UserDTO;
 import com.atrs.airticketreservationsystem.entity.Administrator;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;

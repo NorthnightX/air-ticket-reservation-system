@@ -3,7 +3,7 @@ package com.atrs.airticketreservationsystem.controller;
 import com.atrs.airticketreservationsystem.entity.Airport;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.Route;
-import com.atrs.airticketreservationsystem.entity.RouteDTO;
+import com.atrs.airticketreservationsystem.dto.RouteDTO;
 import com.atrs.airticketreservationsystem.service.AirportService;
 import com.atrs.airticketreservationsystem.service.RouteService;
 import com.atrs.airticketreservationsystem.utils.UserHolder;

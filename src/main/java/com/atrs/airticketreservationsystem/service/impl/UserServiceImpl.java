@@ -5,6 +5,7 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.crypto.digest.MD5;
 import cn.hutool.json.JSONUtil;
 import com.atrs.airticketreservationsystem.config.RabbitMQConfig;
+import com.atrs.airticketreservationsystem.dto.UserDTO;
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.mapper.UserMapper;
 import com.atrs.airticketreservationsystem.service.UserService;

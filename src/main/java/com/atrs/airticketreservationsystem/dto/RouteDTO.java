@@ -1,4 +1,4 @@
-package com.atrs.airticketreservationsystem.entity;
+package com.atrs.airticketreservationsystem.dto;
 
 import com.alibaba.excel.annotation.format.DateTimeFormat;
 import lombok.Data;

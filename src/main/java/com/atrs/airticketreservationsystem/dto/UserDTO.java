@@ -1,4 +1,4 @@
-package com.atrs.airticketreservationsystem.entity;
+package com.atrs.airticketreservationsystem.dto;
 
 import lombok.Data;
 

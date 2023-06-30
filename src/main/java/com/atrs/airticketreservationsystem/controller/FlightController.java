@@ -3,6 +3,7 @@ package com.atrs.airticketreservationsystem.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import com.atrs.airticketreservationsystem.dto.UserDTO;
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.AircraftInformationService;
 import com.atrs.airticketreservationsystem.service.AirportService;
@@ -179,9 +180,7 @@ public class FlightController {
             stringRedisTemplate.opsForHash().putAll(redisKey, flightMap);
             stringRedisTemplate.expire(redisKey, FLIGHT_TTL, TimeUnit.DAYS);
 
-
         }
-
     }
 
     /**

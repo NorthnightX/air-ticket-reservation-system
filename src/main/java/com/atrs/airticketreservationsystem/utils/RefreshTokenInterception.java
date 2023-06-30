@@ -3,7 +3,7 @@ package com.atrs.airticketreservationsystem.utils;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.atrs.airticketreservationsystem.common.RedisConstants;
-import com.atrs.airticketreservationsystem.entity.UserDTO;
+import com.atrs.airticketreservationsystem.dto.UserDTO;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 
