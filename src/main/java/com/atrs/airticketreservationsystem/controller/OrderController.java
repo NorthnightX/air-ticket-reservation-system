@@ -5,13 +5,16 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONUtil;
+import com.atrs.airticketreservationsystem.config.RabbitMQConfig;
 import com.atrs.airticketreservationsystem.dto.OrderDto;
 import com.atrs.airticketreservationsystem.entity.*;
 import com.atrs.airticketreservationsystem.service.*;
 import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.api.R;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +24,9 @@ import javax.annotation.Resource;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.alibaba.fastjson.JSONPatch.OperationType.remove;
 import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
 
 @RestController
@@ -45,6 +46,8 @@ public class OrderController {
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private BaggageService baggageService;
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 条件查询
@@ -309,25 +312,13 @@ public class OrderController {
             //根据雪花算法生成id
             Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
             long id = snowflakeId.nextId();
-            //设置order的属性
+            //设置order的订单号
             orderSuccess.setOrderId(id);
+            //在此处给购买人赋值，消息队列购买会开启新的线程
             orderSuccess.setBookingPerson(UserHolder.getUser().getUsername());
-            orderSuccess.setOrderTime(String.valueOf(LocalDateTime.now()));
-            //转存order数据
-            String redisSaveOrderKey = ORDER_MSG + id;
-            Map<String, Object> orderMapById = BeanUtil.beanToMap(
-                    order, new HashMap<>(), CopyOptions.create().
-                            setIgnoreNullValue(true).
-                            setFieldValueEditor((fieldName, fieldValue) -> {
-                                if (fieldValue == null) {
-                                    fieldValue = "";
-                                } else {
-                                    fieldValue = fieldValue + "";
-                                }
-                                return fieldValue;
-                            }));
-            stringRedisTemplate.opsForHash().putAll(redisSaveOrderKey, orderMapById);
-            orderService.save(orderSuccess);
+            //将orderSuccess转化成json发给消息队列处理
+            String jsonStr = JSONUtil.toJsonStr(orderSuccess);
+            rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, RabbitMQConfig.ORDER_KEY,jsonStr);
             idList.add(id);
         }
         return JsonResponse.success("购买完成:订单号是" + idList);

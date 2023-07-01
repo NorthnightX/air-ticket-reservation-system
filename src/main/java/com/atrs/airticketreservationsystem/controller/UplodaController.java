@@ -23,7 +23,7 @@ public class UplodaController {
      * @param image
      * @return
      */
-    @PostMapping("/pcUpload")
+    @PostMapping("/uploadAvatar")
     public JsonResponse uploadImage(@RequestParam("file") MultipartFile image) {
         try {
             // 获取原始文件名称
