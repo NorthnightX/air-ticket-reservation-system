@@ -49,7 +49,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         else if(email != null && email.length() > 0){
             boolean emailInvalid = RegexUtils.isEmailInvalid(email);
-            if(!emailInvalid){
+            if(emailInvalid){
                 return JsonResponse.error("邮箱格式不正确");
             }
             queryWrapper.eq(User::getEmail, email);
@@ -58,7 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
             String phone = loginFormData.getPhoneNumber();
             boolean phoneInvalid = RegexUtils.isPhoneInvalid(phone);
-            if(!phoneInvalid){
+            if(phoneInvalid){
                 return JsonResponse.error("手机号格式不正确");
             }
             queryWrapper.eq(User::getPhoneNumber, phone);
