@@ -114,6 +114,11 @@ public class UserController {
         return userService.login(loginFormData);
     }
 
+    @PostMapping("/logout")
+    public JsonResponse logout(){
+        UserHolder.removeUser();
+        return JsonResponse.success("注销成功");
+    }
     /**
      * 注册
      * @param user

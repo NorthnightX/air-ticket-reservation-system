@@ -75,6 +75,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(user.getAccountStatus().equals(ACCOUNT_STATUS_BAN)){
             return JsonResponse.error("用户封禁");
         }
+
         UserDTO userDTO = new UserDTO();
         BeanUtils.copyProperties(user,userDTO);
         String token = UUID.randomUUID().toString();
