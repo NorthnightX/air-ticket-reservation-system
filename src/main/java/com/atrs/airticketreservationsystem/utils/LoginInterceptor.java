@@ -17,9 +17,6 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
         //判断是否要拦截
         if(UserHolder.getUser() == null){
-            response.addHeader("Clear-Token", "true");
-            response.sendRedirect("localhost:9999/");
-            response.setStatus(401);
             return false;
         }
         //有用户放行
