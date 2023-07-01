@@ -16,6 +16,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
-import static com.atrs.airticketreservationsystem.common.SystemConstants.IS_USE_TICKET;
-import static com.atrs.airticketreservationsystem.common.SystemConstants.LATEST_CANCEL;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @RestController
 @RequestMapping("/order")
@@ -484,32 +484,58 @@ public class OrderController {
     @Transactional
     @PostMapping("/upgrade")
     public JsonResponse upgrade(@RequestBody Orders orders){
-        //先将原先的升舱字段改为1
-        boolean update = orderService.update().setSql("is_upgrade = 1").
-                eq("order_id", orders.getOrderId()).update();
-        if(!update){
-            return JsonResponse.error("网络异常");
+        try {
+            //保存原始订单的id
+            Long orderIdOrigin = orders.getOrderId();
+            //更改用户消费
+            LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            Integer bookingPerson = orders.getBookingPerson();
+            userLambdaQueryWrapper.eq(User::getId, bookingPerson);
+            User user = userService.getOne(userLambdaQueryWrapper);
+            user.setTotalExpenses(user.getTotalExpenses() + orders.getAmount());
+            //更新票数量
+            LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            flightLambdaQueryWrapper.eq(Flight::getFlightId, orders.getFlightId());
+            Flight flight = flightService.getOne(flightLambdaQueryWrapper);
+            Integer economyClassNum = flight.getEconomyClassNum();
+            Integer firstClassNum = flight.getFirstClassNum();
+            //将经济舱的票数加1
+            flight.setEconomyClassNum(economyClassNum + 1);
+            //头等舱的票数减一
+            flight.setFirstClassNum(firstClassNum - 1);
+            //修改航班信息
+            flightService.update(flight, flightLambdaQueryWrapper);
+            //修改缓存信息
+            String redisKey = FLIGHT_MSG + flight.getFlightId();
+            stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, economyClassNum + 1);
+            stringRedisTemplate.opsForHash().put(redisKey, FIRST_CLASS_NUM, firstClassNum - 1);
+            //生成新的升舱机票
+            Long orderId = orders.getOrderId();
+            Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
+            long id = snowflakeId.nextId();
+            //标记为升舱机票
+            orders.setIsUpgradeOrder(1);
+            //生成升舱订单id
+            orders.setOrderId(id);
+            //保存升舱订单
+            orderService.save(orders);
+            //更新原先订单的字段
+            LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            ordersLambdaQueryWrapper.eq(Orders::getOrderId, orderIdOrigin);
+            //根据原始订单id获得原始订单
+            Orders orderOrigin = orderService.getOne(ordersLambdaQueryWrapper);
+            //更新字段
+            orderOrigin.setIsUpgrade(IS_UPGRADE);
+            orderOrigin.setUpgradeOrderId(id);
+            //修改原先的订单
+            orderService.update(orderOrigin, ordersLambdaQueryWrapper);
+            //更改托运行李的关联订单
+            baggageService.update().setSql("ticket_id=" + id).
+                    eq("ticket_id", orderId).update();
+            return JsonResponse.success("升舱成功");
+        } catch (BeansException e) {
+            throw new RuntimeException(e);
         }
-        //更改用户消费
-
-        //生成新的升舱机票
-        Long orderId = orders.getOrderId();
-        Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
-        long id = snowflakeId.nextId();
-        orders.setOrderId(id);
-        orders.setIsUpgradeOrder(1);
-        boolean save = orderService.save(orders);
-        if(!save){
-            return JsonResponse.success("网络异常");
-        }
-        baggageService.update().setSql("ticket_id=" + id).
-                eq("ticket_id", orderId).update();
-        boolean setUpdatedOrderId = orderService.update().setSql("upgrade_order_id=" + id).
-                eq("order_id", orderId).update();
-        if(!setUpdatedOrderId){
-            return JsonResponse.error("网络异常");
-        }
-        return JsonResponse.success("升舱成功");
     }
 
     /**
