@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.List;
 import static com.atrs.airticketreservationsystem.common.SystemConstants.DEFAULT_PASSWORD;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.UPDATE_USER_STATUS;
 
 @RestController
 @RequestMapping("/user")
@@ -127,12 +128,12 @@ public class UserController {
      * @return
      */
     @GetMapping("/activeUser/{id}")
-    public JsonResponse activeUser(Integer id){
+    public JsonResponse activeUser(@PathVariable Integer id){
         LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
         userLambdaQueryWrapper.eq(User::getId, id);
         User user = userService.getOne(userLambdaQueryWrapper);
-        user.setAccountStatus("1");
-        boolean save = userService.save(user);
+        user.setAccountStatus(UPDATE_USER_STATUS);
+        boolean save = userService.update(user, userLambdaQueryWrapper);
         return save ? JsonResponse.success("激活成功") : JsonResponse.error("激活失败");
     }
 

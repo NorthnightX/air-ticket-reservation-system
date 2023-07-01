@@ -43,7 +43,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/user/login",
                         "/agent/login",
                         "/user/register",
-                        "/flight/queryAll"
+                        "/flight/queryAll",
+                        "/user/activeUser/**"
                 ).order(100);
 
         registry.addInterceptor(new RefreshTokenInterception(stringRedisTemplate)).addPathPatterns(

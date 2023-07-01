@@ -94,6 +94,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return JsonResponse.success(token);
     }
 
+    /**
+     * 注册
+     * @param user
+     * @return
+     */
     @Override
     public JsonResponse register(User user) {
         //密码加密
