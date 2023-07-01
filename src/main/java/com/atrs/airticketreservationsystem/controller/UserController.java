@@ -2,10 +2,12 @@ package com.atrs.airticketreservationsystem.controller;
 
 import cn.hutool.crypto.digest.MD5;
 
+import com.atrs.airticketreservationsystem.dto.UserDTO;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
 import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.entity.User;
 import com.atrs.airticketreservationsystem.service.UserService;
+import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.web.bind.annotation.*;
@@ -135,6 +137,12 @@ public class UserController {
         user.setAccountStatus(UPDATE_USER_STATUS);
         boolean save = userService.update(user, userLambdaQueryWrapper);
         return save ? JsonResponse.success("激活成功") : JsonResponse.error("激活失败");
+    }
+
+    @GetMapping("/getLoginUser")
+    public JsonResponse getLoginUser(){
+        UserDTO user = UserHolder.getUser();
+        return JsonResponse.success(user);
     }
 
 }
