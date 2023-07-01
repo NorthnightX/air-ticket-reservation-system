@@ -1,5 +1,7 @@
 package com.atrs.airticketreservationsystem.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -18,14 +20,13 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.text.ParseException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.alibaba.fastjson.JSONPatch.OperationType.remove;
-import static com.atrs.airticketreservationsystem.common.RedisConstants.FLIGHT_MSG;
+import static com.atrs.airticketreservationsystem.common.RedisConstants.*;
 
 @RestController
 @RequestMapping("/order")
@@ -151,6 +152,19 @@ public class OrderController {
                         order.setDestinationCity(destination.getCity());
                     }
                 }
+                Map<String, Object> orderMap = BeanUtil.beanToMap(
+                        order, new HashMap<>(), CopyOptions.create().
+                                setIgnoreNullValue(true).
+                                setFieldValueEditor((fieldName, fieldValue) -> {
+                                    if (fieldValue == null) {
+                                        fieldValue = "";
+                                    } else {
+                                        fieldValue = fieldValue + "";
+                                    }
+                                    return fieldValue;
+                                }));
+                String redisKey = ORDER_MSG + orderMap.get("orderId");
+                stringRedisTemplate.opsForHash().putAll(redisKey, orderMap);
             }
         }
     }
@@ -173,7 +187,7 @@ public class OrderController {
     }
 
     /**
-     * s删除订单
+     * 删除订单
      * @param orderId
      * @return
      */
@@ -200,6 +214,7 @@ public class OrderController {
     @Transactional
     @PostMapping("/purchase")
     public JsonResponse purchase(@RequestBody OrderDto orders) {
+        List<Long> idList = new ArrayList<>();
         for(int i = 0; i < orders.getOrders().size(); i++){
             Orders order = orders.getOrders().get(i);
             String seatType = order.getSeatType();
@@ -291,13 +306,31 @@ public class OrderController {
             }
             Orders orderSuccess = new Orders();
             BeanUtils.copyProperties(order, orderSuccess);
+            //根据雪花算法生成id
             Snowflake snowflakeId = IdUtil.getSnowflake(RandomUtil.randomInt(0, 31));
-            orderSuccess.setOrderId(snowflakeId.nextId());
+            long id = snowflakeId.nextId();
+            //设置order的属性
+            orderSuccess.setOrderId(id);
             orderSuccess.setBookingPerson(UserHolder.getUser().getUsername());
             orderSuccess.setOrderTime(String.valueOf(LocalDateTime.now()));
+            //转存order数据
+            String redisSaveOrderKey = ORDER_MSG + id;
+            Map<String, Object> orderMapById = BeanUtil.beanToMap(
+                    order, new HashMap<>(), CopyOptions.create().
+                            setIgnoreNullValue(true).
+                            setFieldValueEditor((fieldName, fieldValue) -> {
+                                if (fieldValue == null) {
+                                    fieldValue = "";
+                                } else {
+                                    fieldValue = fieldValue + "";
+                                }
+                                return fieldValue;
+                            }));
+            stringRedisTemplate.opsForHash().putAll(redisSaveOrderKey, orderMapById);
             orderService.save(orderSuccess);
+            idList.add(id);
         }
-        return JsonResponse.success("购买完成");
+        return JsonResponse.success("购买完成:订单号是" + idList);
     }
 
     /**
@@ -355,6 +388,46 @@ public class OrderController {
         }
         return JsonResponse.success("升舱成功");
     }
+
+    /**
+     * 查看订单详情
+     * @param orderId
+     * @return
+     */
+    @GetMapping("/getOrder/{orderId}")
+    public JsonResponse getOrderAllMsg(@PathVariable Long orderId){
+        String redisKey = ORDER_MSG + orderId;
+        Map<Object, Object> orderMap = stringRedisTemplate.opsForHash().entries(redisKey);
+        if(!orderMap.isEmpty()){
+            Orders orders = BeanUtil.fillBeanWithMap(orderMap, new Orders(), false);
+            return JsonResponse.success(orders);
+        }
+        else{
+            LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Orders::getOrderId, orderId);
+            List<Orders> list = orderService.list(queryWrapper);
+            if(list == null || list.size() == 0){
+                return JsonResponse.error("网络异常");
+            }
+            populateOrder(list);
+            Orders order = list.get(0);
+            //存到redis中
+            Map<String, Object> orderMapById = BeanUtil.beanToMap(
+                    order, new HashMap<>(), CopyOptions.create().
+                            setIgnoreNullValue(true).
+                            setFieldValueEditor((fieldName, fieldValue) -> {
+                                if (fieldValue == null) {
+                                    fieldValue = "";
+                                } else {
+                                    fieldValue = fieldValue + "";
+                                }
+                                return fieldValue;
+                            }));
+            stringRedisTemplate.opsForHash().putAll(redisKey, orderMapById);
+            return JsonResponse.success(order);
+        }
+    }
+
 
 
 }

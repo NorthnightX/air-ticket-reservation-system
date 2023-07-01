@@ -7,7 +7,5 @@ import java.util.List;
 
 @Data
 public class OrderDto {
-
     List<Orders> orders;
-
 }

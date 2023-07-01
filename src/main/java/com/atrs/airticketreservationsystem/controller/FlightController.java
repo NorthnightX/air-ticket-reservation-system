@@ -170,12 +170,6 @@ public class FlightController {
                                 }
                                 return fieldValue;
                             }));
-//            String departureTime = flight.getDepartureTime();
-//            String[] s = departureTime.split(" ");
-//            String redisKey = FLIGHT_MSG + flightMap.get("departureCity") + ":" +
-//                    flightMap.get("destinationCity") + ":" + s[0];
-//            stringRedisTemplate.opsForHash().putAll(redisKey, flightMap);
-//            stringRedisTemplate.expire(redisKey, FLIGHT_TTL, TimeUnit.DAYS);
             String redisKey = FLIGHT_MSG + flightMap.get("flightId");
             stringRedisTemplate.opsForHash().putAll(redisKey, flightMap);
             stringRedisTemplate.expire(redisKey, FLIGHT_TTL, TimeUnit.DAYS);
