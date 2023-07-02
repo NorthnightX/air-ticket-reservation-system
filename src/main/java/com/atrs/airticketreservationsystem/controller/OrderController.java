@@ -581,17 +581,28 @@ public class OrderController {
         }
     }
 
+    /**
+     * 根据用户获得订单
+     * @return
+     */
     @GetMapping("/getOrderByUser")
     public JsonResponse getOrderByUser(){
         Long id = UserHolder.getUser().getId();
         LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Orders::getBookingPerson, id);
         List<Orders> list = orderService.list(queryWrapper);
-        if(list == null && list.size() == 0){
+        populateOrder(list);
+        if(list.size() == 0){
             return JsonResponse.success("还没有订单哦~");
         }
         populateOrder(list);
         return JsonResponse.success(list);
+    }
+
+
+    @GetMapping("/getAll")
+    public JsonResponse getAll(){
+        return JsonResponse.success(orderService.list());
     }
 
 }
