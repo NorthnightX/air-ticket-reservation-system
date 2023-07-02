@@ -623,7 +623,11 @@ public class OrderController {
         return JsonResponse.success(orderService.list());
     }
 
-
+    /**
+     * 升舱
+     * @param orders
+     * @return
+     */
     @PostMapping("/rebook")
     public  JsonResponse  rebook(@RequestBody Orders orders){
         try {
@@ -647,24 +651,20 @@ public class OrderController {
             Flight flight = flightService.getOne(flightLambdaQueryWrapper);
             //根据订单的座位类型进行修改
             if(seatType.equals("0")){
-                flight.setEconomyClassNum(flight.getEconomyClassNum() + 1);
                 String redisKey = FLIGHT_MSG + flightId;
                 stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getEconomyClassNum() + 1));
+                flight.setEconomyClassNum(flight.getEconomyClassNum() + 1);
             } else{
-                flight.setFirstClassNum(flight.getFirstClassNum() + 1);
                 String redisKey = FLIGHT_MSG + flightId;
                 stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getFirstClassNum() + 1));
+                flight.setFirstClassNum(flight.getFirstClassNum() + 1);
             }
-            // ****************
             flightService.update(flight, flightLambdaQueryWrapper);
             //设置原始订单状态
             orderOrigin.setCancellationTime(LocalDateTime.now());
             orderOrigin.setIsCancelled(CANCEL_ORDER);
-            //**********************
             boolean update = orderService.update(orderOrigin, ordersLambdaQueryWrapper);
-            if(update){
-                Thread.sleep(1000);
-            }
+            System.out.println(update);
             return JsonResponse.success("改签成功");
         } catch (Exception e) {
             throw new RuntimeException(e);
