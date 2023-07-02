@@ -15,4 +15,5 @@ public class UserDTO {
     private String gender;
     private Long vipStatus;
     private Double totalExpenses;
+    private String administratorType;
 }

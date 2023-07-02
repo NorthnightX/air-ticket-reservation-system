@@ -168,11 +168,13 @@ public class OrderController {
                 LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
                 passengerInformationLambdaQueryWrapper.eq(PassengerInformation::getId, passenger);
                 userLambdaQueryWrapper.eq(User::getId, bookingPerson);
+                //查询订票人
                 User user = userService.getOne(userLambdaQueryWrapper);
+                //查询乘客
                 PassengerInformation passengerInformation = passengerInformationService.getOne(passengerInformationLambdaQueryWrapper);
+                //赋值
                 order.setBookPersonName(user.getUsername());
                 order.setPassengerName(passengerInformation.getPassengerName());
-
                 Map<String, Object> orderMap = BeanUtil.beanToMap(
                         order, new HashMap<>(), CopyOptions.create().
                                 setIgnoreNullValue(true).
@@ -619,5 +621,7 @@ public class OrderController {
     public JsonResponse getAll(){
         return JsonResponse.success(orderService.list());
     }
+
+
 
 }
