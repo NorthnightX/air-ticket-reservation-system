@@ -53,5 +53,6 @@ public class SystemConstants {
     public static final Integer DEFAULT_IS_USED = 0;
     //是否升舱
     public static final Long DEFAULT_IS_UPGRADE = 0L;
+    public static final Long CANCEL_ORDER = 1L;
 
 }

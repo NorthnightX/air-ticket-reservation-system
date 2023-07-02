@@ -59,7 +59,8 @@ public class FlightController {
             //查询单个航班
             if(flightId != null){
                 queryWrapper.eq(Flight::getFlightId, flightId);
-                List<Flight> flightList = flightService.list(queryWrapper);
+
+                 List<Flight> flightList = flightService.list(queryWrapper);
                 if(flightList == null || flightList.size() == 0){
                     return JsonResponse.error("没有该航班");
                 }

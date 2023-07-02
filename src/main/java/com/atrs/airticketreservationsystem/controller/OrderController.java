@@ -53,6 +53,8 @@ public class OrderController {
     private UserService userService;
     @Resource
     private PassengerInformationService passengerInformationService;
+    @Resource
+    private VipService vipService;
 
     /**
      * 条件查询
@@ -237,7 +239,6 @@ public class OrderController {
     @Transactional
     @PostMapping("/purchase")
     public JsonResponse purchase(@RequestBody OrderDto orders) {
-        try {
             List<Long> idList = new ArrayList<>();
             for(int i = 0; i < orders.getOrders().size(); i++){
                 Orders order = orders.getOrders().get(i);
@@ -401,12 +402,7 @@ public class OrderController {
                 idList.add(id);
             }
             return JsonResponse.success("购买完成:订单号是" + idList);
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
     }
-
-
 
 
 
@@ -546,6 +542,8 @@ public class OrderController {
             //根据原始订单id获得原始订单
             Orders orderOrigin = orderService.getOne(ordersLambdaQueryWrapper);
             //更新字段
+            orderOrigin.setCancellationTime(LocalDateTime.now());
+            orderOrigin.setIsCancelled(CANCEL_ORDER);
             orderOrigin.setIsUpgrade(IS_UPGRADE);
             orderOrigin.setUpgradeOrderId(id);
             //修改原先的订单
@@ -627,8 +625,49 @@ public class OrderController {
 
 
     @PostMapping("/rebook")
-    public  JsonResponse  rebook(){
-        return JsonResponse.success("");
+    public  JsonResponse  rebook(@RequestBody Orders orders){
+        try {
+            //接受的值： 旧的订单号 + 新的订单信息
+            List<Orders> ordersList = new ArrayList<>();
+            ordersList.add(orders);
+            OrderDto orderDto = new OrderDto();
+            orderDto.setOrders(ordersList);
+            //根据新的订单信息进行买票
+            purchase(orderDto);
+            Long orderId = orders.getOrderId();
+            LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            ordersLambdaQueryWrapper.eq(Orders::getOrderId, orderId);
+            //获取原始订单
+            Orders orderOrigin = orderService.getOne(ordersLambdaQueryWrapper);
+            //获取先前订单的座位类型和航班id
+            String seatType = orderOrigin.getSeatType();
+            Long flightId = orderOrigin.getFlightId();
+            LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            flightLambdaQueryWrapper.eq(Flight::getFlightId, flightId);
+            Flight flight = flightService.getOne(flightLambdaQueryWrapper);
+            //根据订单的座位类型进行修改
+            if(seatType.equals("0")){
+                flight.setEconomyClassNum(flight.getEconomyClassNum() + 1);
+                String redisKey = FLIGHT_MSG + flightId;
+                stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getEconomyClassNum() + 1));
+            } else{
+                flight.setFirstClassNum(flight.getFirstClassNum() + 1);
+                String redisKey = FLIGHT_MSG + flightId;
+                stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getFirstClassNum() + 1));
+            }
+            // ****************
+            flightService.update(flight, flightLambdaQueryWrapper);
+            //设置原始订单状态
+            orderOrigin.setCancellationTime(LocalDateTime.now());
+            orderOrigin.setIsCancelled(CANCEL_ORDER);
+            //**********************
+            boolean update = orderService.update(orderOrigin, ordersLambdaQueryWrapper);
+            if(update){
+                Thread.sleep(1000);
+            }
+            return JsonResponse.success("改签成功");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-
 }
