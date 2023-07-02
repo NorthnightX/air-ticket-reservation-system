@@ -49,12 +49,14 @@ public class AnnouncementController {
      */
     @PutMapping("/updateAnnouncement")
     public JsonResponse updateAnnouncement(@RequestBody Announcement announcement) throws ParseException {
-        String ttl = announcement.getTtl();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date ttl1 = sdf.parse(ttl);
-        boolean before = ttl1.before(DateTime.now());
-        if(before){
-            return JsonResponse.error("如果想下架改公告请调整公告状态");
+        if(announcement.getTtl() != null){
+            String ttl = announcement.getTtl();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date ttl1 = sdf.parse(ttl);
+            boolean before = ttl1.before(DateTime.now());
+            if(before){
+                return JsonResponse.error("如果想下架改公告请调整公告状态");
+            }
         }
         announcement.setModifyTime(LocalDateTime.now());
         announcement.setModifier(UserHolder.getUser().getUsername());

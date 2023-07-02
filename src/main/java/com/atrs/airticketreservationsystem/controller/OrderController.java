@@ -13,6 +13,7 @@ import com.atrs.airticketreservationsystem.service.*;
 import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -408,13 +409,14 @@ public class OrderController {
 
     /**
      * 取消订单
-     * @param orderId
+     * @param id
      * @return
      */
     @Transactional
     @PostMapping("/returnTicket")
-    public JsonResponse returnTicket(@RequestParam Long orderId) throws ParseException {
+    public JsonResponse returnTicket(@RequestBody String id) throws ParseException {
         try {
+            Long orderId = Long.valueOf(id);
             LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(Orders::getOrderId, orderId);
             Orders orders = orderService.getOne(queryWrapper);
@@ -631,43 +633,76 @@ public class OrderController {
     @PostMapping("/rebook")
     public  JsonResponse  rebook(@RequestBody Orders orders){
         try {
-            //接受的值： 旧的订单号 + 新的订单信息
             List<Orders> ordersList = new ArrayList<>();
             ordersList.add(orders);
             OrderDto orderDto = new OrderDto();
             orderDto.setOrders(ordersList);
             //根据新的订单信息进行买票
             purchase(orderDto);
-            Long orderId = orders.getOrderId();
-            LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            ordersLambdaQueryWrapper.eq(Orders::getOrderId, orderId);
-            //获取原始订单
-            Orders orderOrigin = orderService.getOne(ordersLambdaQueryWrapper);
-            //获取先前订单的座位类型和航班id
-            String seatType = orderOrigin.getSeatType();
-            Long flightId = orderOrigin.getFlightId();
-            LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            flightLambdaQueryWrapper.eq(Flight::getFlightId, flightId);
-            Flight flight = flightService.getOne(flightLambdaQueryWrapper);
-            //根据订单的座位类型进行修改
-            if(seatType.equals("0")){
-                String redisKey = FLIGHT_MSG + flightId;
-                stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getEconomyClassNum() + 1));
-                flight.setEconomyClassNum(flight.getEconomyClassNum() + 1);
-            } else{
-                String redisKey = FLIGHT_MSG + flightId;
-                stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getFirstClassNum() + 1));
-                flight.setFirstClassNum(flight.getFirstClassNum() + 1);
-            }
-            flightService.update(flight, flightLambdaQueryWrapper);
-            //设置原始订单状态
-            orderOrigin.setCancellationTime(LocalDateTime.now());
-            orderOrigin.setIsCancelled(CANCEL_ORDER);
-            boolean update = orderService.update(orderOrigin, ordersLambdaQueryWrapper);
-            System.out.println(update);
             return JsonResponse.success("改签成功");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 改签后取消先前的订单
+     * @param id
+     * @return
+     */
+    @PostMapping("/rebookCancelOrigin")
+    public JsonResponse rebookCancelOrigin(@RequestBody String id){
+        Long orderId = Long.valueOf(id);
+        LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        ordersLambdaQueryWrapper.eq(Orders::getOrderId, orderId);
+        //获取原始订单
+        Orders orderOrigin = orderService.getOne(ordersLambdaQueryWrapper);
+        //获取先前订单的座位类型和航班id
+        String seatType = orderOrigin.getSeatType();
+        Long flightId = orderOrigin.getFlightId();
+        LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        flightLambdaQueryWrapper.eq(Flight::getFlightId, flightId);
+        Flight flight = flightService.getOne(flightLambdaQueryWrapper);
+        //根据订单的座位类型进行修改
+        if(seatType.equals("0")){
+            String redisKey = FLIGHT_MSG + flightId;
+            stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getEconomyClassNum() + 1));
+            flight.setEconomyClassNum(flight.getEconomyClassNum() + 1);
+        } else{
+            String redisKey = FLIGHT_MSG + flightId;
+            stringRedisTemplate.opsForHash().put(redisKey, ECONOMY_CLASS_NUM, String.valueOf(flight.getFirstClassNum() + 1));
+            flight.setFirstClassNum(flight.getFirstClassNum() + 1);
+        }
+        flightService.update(flight, flightLambdaQueryWrapper);
+        //设置原始订单状态
+        orderOrigin.setCancellationTime(LocalDateTime.now());
+        orderOrigin.setIsCancelled(CANCEL_ORDER);
+        orderService.update(orderOrigin, ordersLambdaQueryWrapper);
+        return JsonResponse.success(null);
+    }
+    /**
+     * 上座率
+     * @return
+     */
+    @GetMapping("/attendance")
+    public JsonResponse attendance(){
+        LambdaQueryWrapper<Orders> ordersLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Flight> flightLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        flightLambdaQueryWrapper.lt(Flight::getDepartureTime, LocalDateTime.now());
+        List<Flight> flightList = flightService.list(flightLambdaQueryWrapper);
+        List<Long> flightIdList = flightList.stream().map(Flight::getFlightId).toList();
+        ordersLambdaQueryWrapper.in(Orders::getFlightId, flightIdList);
+        List<Orders> list = orderService.list(ordersLambdaQueryWrapper);
+        List<Integer> isUseList = list.stream().map(Orders::getIsUse).filter(isUse -> isUse == 1).toList();
+        Rate rate1 = new Rate();
+        Rate rate2 = new Rate();
+        rate1.setValue(isUseList.size());
+        rate1.setName("登机人数");
+        rate2.setName("未登机人数");
+        rate2.setValue(list.size() - isUseList.size());
+        List<Rate> rate = new ArrayList<>();
+        rate.add(rate1);
+        rate.add(rate2);
+        return JsonResponse.success(rate);
     }
 }

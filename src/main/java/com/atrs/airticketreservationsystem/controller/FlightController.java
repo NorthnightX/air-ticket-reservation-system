@@ -5,10 +5,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import com.atrs.airticketreservationsystem.dto.UserDTO;
 import com.atrs.airticketreservationsystem.entity.*;
-import com.atrs.airticketreservationsystem.service.AircraftInformationService;
-import com.atrs.airticketreservationsystem.service.AirportService;
-import com.atrs.airticketreservationsystem.service.FlightService;
-import com.atrs.airticketreservationsystem.service.RouteService;
+import com.atrs.airticketreservationsystem.service.*;
 import com.atrs.airticketreservationsystem.utils.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -40,7 +37,8 @@ public class FlightController {
     private AirportService airportService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-
+    @Resource
+    private AircraftTypeService aircraftTypeService;
     /**
      * 航班查询
      * @param pageNum
@@ -275,6 +273,44 @@ public class FlightController {
             return JsonResponse.error("修改失败");
         }
         return JsonResponse.success("修改成功");
+    }
+
+    /**
+     * 统计出票率
+     * @return
+     */
+    @GetMapping("/seatRate")
+    public JsonResponse seatRate(){
+        List<Flight> flightList = flightService.list();
+        Rate rate1 = new Rate();
+        Rate rate2 = new Rate();
+        int sum = 0, remain = 0;
+        for (Flight flight : flightList) {
+            //剩余座位数
+            int num = flight.getEconomyClassNum() + flight.getFirstClassNum();
+            Long aircraftId = flight.getAircraftId();
+            LambdaQueryWrapper<AircraftInformation> aircraftInformationLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            aircraftInformationLambdaQueryWrapper.eq(AircraftInformation::getId, aircraftId);
+            AircraftInformation aircraftInformation = aircraftInformationService.getOne(aircraftInformationLambdaQueryWrapper);
+            Long modelId = aircraftInformation.getModelId();
+            LambdaQueryWrapper<AircraftType> aircraftTypeLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            aircraftTypeLambdaQueryWrapper.eq(AircraftType::getId, modelId);
+            AircraftType aircraftType = aircraftTypeService.getOne(aircraftTypeLambdaQueryWrapper);
+            Long passengerCapacity = aircraftType.getPassengerCapacity();
+            //座位总数
+            int seatSum = Integer.parseInt(String.valueOf(passengerCapacity));
+            //出票率 = （总数 - 剩余）/ 总数
+            remain += num;
+            sum += seatSum;
+        }
+        rate1.setValue(sum - remain);
+        rate1.setName("售出座位数");
+        rate2.setName("剩余座位数");
+        rate2.setValue(remain);
+        List<Rate> rate = new ArrayList<>();
+        rate.add(rate1);
+        rate.add(rate2);
+        return JsonResponse.success(rate);
     }
 
 
