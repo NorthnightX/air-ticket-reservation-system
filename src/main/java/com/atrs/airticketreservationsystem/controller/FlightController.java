@@ -234,6 +234,7 @@ public class FlightController {
      */
     @PutMapping("/updateFlight")
     public JsonResponse updateFlight(@RequestBody Flight flight) throws ParseException {
+        //判断到达时间和起飞时间的关系
         String departureTime = flight.getDepartureTime();
         String arrivalTime = flight.getArrivalTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -242,8 +243,10 @@ public class FlightController {
         if(arrival.before(departure)){
             return JsonResponse.error("到达时间不能早于出发时间");
         }
+        //更新审计信息
         flight.setModifyTime(LocalDateTime.now());
         flight.setModifier(UserHolder.getUser().getUsername());
+
         LambdaQueryWrapper<Route> queryWrapper = new LambdaQueryWrapper<>();
         Long departureAirportId = flight.getDepartureAirportId();
         Long destinationAirportId = flight.getDestinationAirportId();

@@ -26,7 +26,7 @@ public class VipController {
     private VipService vipService;
 
     /**
-     *
+     * 分页
      * @param pageNum
      * @param pageSize
      * @return
@@ -41,6 +41,11 @@ public class VipController {
         Page<Vip> vipPage = vipService.page(page, queryWrapper);
         return JsonResponse.success(vipPage);
     }
+
+    /**
+     * 获取当前登录用户的vip折扣信息
+     * @return
+     */
     @GetMapping("/getUserVipDisCountRate")
     public JsonResponse getUserVipDisCountRate() {
         Long vipStatus = UserHolder.getUser().getVipStatus();
@@ -50,6 +55,11 @@ public class VipController {
         return JsonResponse.success(vipService.getOne(queryWrapper));
     }
 
+    /**
+     * 更新vip信息
+     * @param vip
+     * @return
+     */
     @PutMapping("/updateVip")
     public JsonResponse updateVip(@RequestBody Vip vip){
         vip.setModifyTime(LocalDateTime.now());
@@ -61,6 +71,11 @@ public class VipController {
         return JsonResponse.success("修改成功");
     }
 
+    /**
+     * 删除
+     * @param id
+     * @return
+     */
 
     @DeleteMapping("/delete")
     public JsonResponse delete(@RequestParam List<Long> id){
@@ -71,7 +86,11 @@ public class VipController {
         return JsonResponse.success("删除成功");
     }
 
-
+    /**
+     * 新增
+     * @param vip
+     * @return
+     */
     @PostMapping("/addVip")
     public JsonResponse addVip(@RequestBody Vip vip){
         vip.setModifyTime(LocalDateTime.now());

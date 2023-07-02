@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.atrs.airticketreservationsystem.common.RedisConstants.ORDER_MSG;
+import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 
 @Service
 public class OrderQueryServiceImpl {
@@ -46,8 +47,12 @@ public class OrderQueryServiceImpl {
     @Transactional
     public void consume(String msg) throws InterruptedException {
         Orders orders = JSONUtil.toBean(msg, Orders.class);
+        //设置order数据
         orders.setOrderTime(String.valueOf(LocalDateTime.now()));
-        //转存order数据
+        orders.setIsUpgradeOrder(DEFAULT_IS_UPGRADE_ORDER);
+        orders.setIsCancelled(DEFAULT_IS_CANCEL);
+        orders.setIsUse(DEFAULT_IS_USED);
+        orders.setIsUpgrade(DEFAULT_IS_UPGRADE);
         Double amount = orders.getAmount();
         //获取订票的用户
         Integer bookingPerson = orders.getBookingPerson();

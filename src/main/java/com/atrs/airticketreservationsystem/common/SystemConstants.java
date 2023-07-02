@@ -44,7 +44,14 @@ public class SystemConstants {
     public static final String ECONOMY_CLASS_NUM = "economyClassNum";
     //头等舱舱位数量
     public static final String FIRST_CLASS_NUM = "firstClassNum";
+    //购买时默认的4项字段，是否是升舱订单
+    public static final Integer DEFAULT_IS_UPGRADE_ORDER = 0;
+    //是否是取消的订单
+    public static final Long DEFAULT_IS_CANCEL = 0L;
 
-
+    //是否已经使用
+    public static final Integer DEFAULT_IS_USED = 0;
+    //是否升舱
+    public static final Long DEFAULT_IS_UPGRADE = 0L;
 
 }

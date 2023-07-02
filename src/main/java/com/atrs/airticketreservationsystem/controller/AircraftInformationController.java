@@ -127,4 +127,21 @@ public class AircraftInformationController {
         List<AircraftInformation> list = aircraftInformationService.list();
         return JsonResponse.success(list);
     }
+
+    /**
+     * 获取飞机对应的类型信息
+     * @param id
+     * @return
+     */
+    @GetMapping("/getModel/{id}")
+    public JsonResponse getModel(@PathVariable Long id){
+        LambdaQueryWrapper<AircraftInformation> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AircraftInformation::getId, id);
+        AircraftInformation aircraftInformation = aircraftInformationService.getOne(queryWrapper);
+        Long modelId = aircraftInformation.getModelId();
+        LambdaQueryWrapper<AircraftType> aircraftTypeLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        aircraftTypeLambdaQueryWrapper.eq(AircraftType::getId, modelId);
+        AircraftType aircraftType = aircraftTypeService.getOne(aircraftTypeLambdaQueryWrapper);
+        return JsonResponse.success(aircraftType);
+    }
 }

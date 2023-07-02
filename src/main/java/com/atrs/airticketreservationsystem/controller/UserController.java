@@ -114,6 +114,10 @@ public class UserController {
         return userService.login(loginFormData);
     }
 
+    /**
+     * 登出
+     * @return
+     */
     @PostMapping("/logout")
     public JsonResponse logout(){
         UserHolder.removeUser();
@@ -144,6 +148,10 @@ public class UserController {
         return save ? JsonResponse.success("激活成功") : JsonResponse.error("激活失败");
     }
 
+    /**
+     * 获取当前登录用户信息
+     * @return
+     */
     @GetMapping("/getLoginUser")
     public JsonResponse getLoginUser(){
         UserDTO user = UserHolder.getUser();
