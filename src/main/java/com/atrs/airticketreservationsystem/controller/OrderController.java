@@ -51,6 +51,8 @@ public class OrderController {
     private RabbitTemplate rabbitTemplate;
     @Resource
     private UserService userService;
+    @Resource
+    private PassengerInformationService passengerInformationService;
 
     /**
      * 条件查询
@@ -158,6 +160,19 @@ public class OrderController {
                         order.setDestinationCity(destination.getCity());
                     }
                 }
+                //获取订票人id
+                Integer bookingPerson = order.getBookingPerson();
+                //获取乘客id
+                Integer passenger = order.getPassenger();
+                LambdaQueryWrapper<PassengerInformation> passengerInformationLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                passengerInformationLambdaQueryWrapper.eq(PassengerInformation::getId, passenger);
+                userLambdaQueryWrapper.eq(User::getId, bookingPerson);
+                User user = userService.getOne(userLambdaQueryWrapper);
+                PassengerInformation passengerInformation = passengerInformationService.getOne(passengerInformationLambdaQueryWrapper);
+                order.setBookPersonName(user.getUsername());
+                order.setPassengerName(passengerInformation.getPassengerName());
+
                 Map<String, Object> orderMap = BeanUtil.beanToMap(
                         order, new HashMap<>(), CopyOptions.create().
                                 setIgnoreNullValue(true).
@@ -399,8 +414,8 @@ public class OrderController {
      * @return
      */
     @Transactional
-    @PostMapping("/returnTicket/{orderId}")
-    public JsonResponse returnTicket(@PathVariable Long orderId) throws ParseException {
+    @PostMapping("/returnTicket")
+    public JsonResponse returnTicket(@RequestParam Long orderId) throws ParseException {
         try {
             LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(Orders::getOrderId, orderId);
@@ -591,11 +606,11 @@ public class OrderController {
         LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Orders::getBookingPerson, id);
         List<Orders> list = orderService.list(queryWrapper);
-        populateOrder(list);
         if(list.size() == 0){
             return JsonResponse.success("还没有订单哦~");
         }
         populateOrder(list);
+
         return JsonResponse.success(list);
     }
 

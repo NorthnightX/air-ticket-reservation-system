@@ -42,6 +42,10 @@ public class Orders {
   private String departureCity;
   @TableField(exist = false)
   private String destinationCity;
+  @TableField(exist = false)
+  private String bookPersonName;
+  @TableField(exist = false)
+  private String passengerName;
 
 
 }
