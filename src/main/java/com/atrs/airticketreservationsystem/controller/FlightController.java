@@ -56,6 +56,7 @@ public class FlightController {
             Page<Flight> page = new Page<>(pageNum, pageSize);
             LambdaQueryWrapper<Flight> queryWrapper = new LambdaQueryWrapper<>();
             Long flightId = flight.getFlightId();
+            //查询单个航班
             if(flightId != null){
                 queryWrapper.eq(Flight::getFlightId, flightId);
                 List<Flight> flightList = flightService.list(queryWrapper);
