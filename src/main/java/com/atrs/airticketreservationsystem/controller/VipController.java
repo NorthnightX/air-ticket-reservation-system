@@ -25,6 +25,12 @@ public class VipController {
     @Resource
     private VipService vipService;
 
+    /**
+     *
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
     @GetMapping("/queryAll")
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1")Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10")Integer pageSize)
@@ -34,6 +40,14 @@ public class VipController {
         queryWrapper.orderByDesc(Vip::getLevel);
         Page<Vip> vipPage = vipService.page(page, queryWrapper);
         return JsonResponse.success(vipPage);
+    }
+    @GetMapping("/getUserVipDisCountRate")
+    public JsonResponse getUserVipDisCountRate() {
+        Long vipStatus = UserHolder.getUser().getVipStatus();
+        LambdaQueryWrapper<Vip> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Vip::getLevel, vipStatus);
+        queryWrapper.orderByDesc(Vip::getLevel);
+        return JsonResponse.success(vipService.getOne(queryWrapper));
     }
 
     @PutMapping("/updateVip")
