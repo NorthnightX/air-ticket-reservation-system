@@ -52,51 +52,65 @@ public class FlightController {
     public JsonResponse page(@RequestParam(required = false, defaultValue = "1") Integer pageNum,
                              @RequestParam(required = false, defaultValue = "10") Integer pageSize,
                              Flight flight) {
-        Page<Flight> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Flight> queryWrapper = new LambdaQueryWrapper<>();
-        // 构建航班查询条件
-        if (flight.getAircraftCode() != null && !flight.getAircraftCode().isEmpty()) {
-            LambdaQueryWrapper<AircraftInformation> aircraftInformationLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            aircraftInformationLambdaQueryWrapper.like(AircraftInformation::getAircraftCode, flight.getAircraftCode());
-            List<AircraftInformation> aircraft = aircraftInformationService.list(aircraftInformationLambdaQueryWrapper);
-            List<Long> airportIds = aircraft.stream().map(AircraftInformation::getId).toList();
-            if(airportIds.size() == 0){
-                return JsonResponse.error("没有该航班");
+        try {
+            Page<Flight> page = new Page<>(pageNum, pageSize);
+            LambdaQueryWrapper<Flight> queryWrapper = new LambdaQueryWrapper<>();
+            Long flightId = flight.getFlightId();
+            if(flightId != null){
+                queryWrapper.eq(Flight::getFlightId, flightId);
+                List<Flight> flightList = flightService.list(queryWrapper);
+                if(flightList == null || flightList.size() == 0){
+                    return JsonResponse.error("没有该航班");
+                }
+                populateFlightData(flightList);
+                return JsonResponse.success(flightList);
             }
-            queryWrapper.in(Flight::getAircraftId, airportIds);
-        }
-        List<Route> routeList = getRoutes(flight);
-        if (!routeList.isEmpty()) {
-            List<Long> routeIds = routeList.stream().map(Route::getId).collect(Collectors.toList());
-            queryWrapper.in(Flight::getRouteId, routeIds);
-        } else{
-            return JsonResponse.error("该城市没有航班");
-        }
-        //根据时间进行查询
-        if(flight.getDepartureTime() != null && flight.getDepartureTime().length() > 0){
-            queryWrapper.like(Flight::getDepartureTime, flight.getDepartureTime());
-        }
-        //如果是用户，只展示正常状态和推迟状态的飞机
-        UserDTO user = UserHolder.getUser();
-        if(user == null){
-            List<Integer> statusList = new ArrayList<>(Arrays.asList(NOT_FLY, DELAY));
-            queryWrapper.in(Flight::getStatus, statusList);
-        } else{
-            Long vipStatus = UserHolder.getUser().getVipStatus();
-            if(!Objects.equals(vipStatus, ADMIN_VIP_STATUS)){
+            // 构建航班查询条件
+            if (flight.getAircraftCode() != null && !flight.getAircraftCode().isEmpty()) {
+                LambdaQueryWrapper<AircraftInformation> aircraftInformationLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                aircraftInformationLambdaQueryWrapper.like(AircraftInformation::getAircraftCode, flight.getAircraftCode());
+                List<AircraftInformation> aircraft = aircraftInformationService.list(aircraftInformationLambdaQueryWrapper);
+                List<Long> airportIds = aircraft.stream().map(AircraftInformation::getId).toList();
+                if(airportIds.size() == 0){
+                    return JsonResponse.error("没有该航班");
+                }
+                queryWrapper.in(Flight::getAircraftId, airportIds);
+            }
+            List<Route> routeList = getRoutes(flight);
+            if (!routeList.isEmpty()) {
+                List<Long> routeIds = routeList.stream().map(Route::getId).collect(Collectors.toList());
+                queryWrapper.in(Flight::getRouteId, routeIds);
+            } else{
+                return JsonResponse.error("该城市没有航班");
+            }
+            //根据时间进行查询
+            if(flight.getDepartureTime() != null && flight.getDepartureTime().length() > 0){
+                queryWrapper.like(Flight::getDepartureTime, flight.getDepartureTime());
+            }
+            //如果是用户，只展示正常状态和推迟状态的飞机
+            UserDTO user = UserHolder.getUser();
+            if(user == null){
                 List<Integer> statusList = new ArrayList<>(Arrays.asList(NOT_FLY, DELAY));
                 queryWrapper.in(Flight::getStatus, statusList);
+            } else{
+                Long vipStatus = UserHolder.getUser().getVipStatus();
+                if(!Objects.equals(vipStatus, ADMIN_VIP_STATUS)){
+                    List<Integer> statusList = new ArrayList<>(Arrays.asList(NOT_FLY, DELAY));
+                    queryWrapper.in(Flight::getStatus, statusList);
+                }
             }
+            Page<Flight> flightPage = flightService.page(page, queryWrapper);
+            List<Flight> flightList = flightPage.getRecords();
+            if(flightList.size() == 0){
+                return JsonResponse.error("没有符合条件的航班");
+            }
+            populateFlightData(flightList);
+            page.setRecords(flightList);
+            page.setTotal(flightPage.getTotal());
+            return JsonResponse.success(page);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        Page<Flight> flightPage = flightService.page(page, queryWrapper);
-        List<Flight> flightList = flightPage.getRecords();
-        if(flightList.size() == 0){
-            return JsonResponse.error("没有符合条件的航班");
-        }
-        populateFlightData(flightList);
-        page.setRecords(flightList);
-        page.setTotal(flightPage.getTotal());
-        return JsonResponse.success(page);
     }
 
     /**
@@ -260,4 +274,6 @@ public class FlightController {
         }
         return JsonResponse.success("修改成功");
     }
+
+
 }

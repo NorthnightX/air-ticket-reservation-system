@@ -616,12 +616,19 @@ public class OrderController {
         return JsonResponse.success(list);
     }
 
-
+    /**
+     * 获取所有订单
+     * @return
+     */
     @GetMapping("/getAll")
     public JsonResponse getAll(){
         return JsonResponse.success(orderService.list());
     }
 
 
+    @PostMapping("/rebook")
+    public  JsonResponse  rebook(){
+        return JsonResponse.success("");
+    }
 
 }
