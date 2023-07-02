@@ -586,6 +586,14 @@ public class OrderController {
         }
     }
 
-
+    @GetMapping("/getOrderByUser")
+    public JsonResponse getOrderByUser(){
+        Long id = UserHolder.getUser().getId();
+        LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Orders::getBookingPerson, id);
+        List<Orders> list = orderService.list(queryWrapper);
+        populateOrder(list);
+        return JsonResponse.success(list);
+    }
 
 }
