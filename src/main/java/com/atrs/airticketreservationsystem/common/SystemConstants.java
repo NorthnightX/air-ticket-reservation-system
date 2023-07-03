@@ -34,6 +34,8 @@ public class SystemConstants {
     public static final Integer DELAY = 2;
     //设置管理员的vip等级，用于校验区分用户
     public static final Long ADMIN_VIP_STATUS = -1L;
+    //代理vip等级
+    public static final Long AGENT_VIP_STATUS = -2L;
     //头像生成文件夹
     public static final String IMAGE_UPLOAD_DIR = "F:\\img";
     //头像生成

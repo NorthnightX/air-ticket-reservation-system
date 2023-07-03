@@ -4,6 +4,7 @@ import cn.hutool.crypto.digest.MD5;
 
 import com.atrs.airticketreservationsystem.entity.Agent;
 import com.atrs.airticketreservationsystem.entity.JsonResponse;
+import com.atrs.airticketreservationsystem.entity.LoginFormData;
 import com.atrs.airticketreservationsystem.service.AgentService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -17,6 +18,12 @@ import static com.atrs.airticketreservationsystem.common.SystemConstants.*;
 public class AgentController {
     @Resource
     private AgentService agentService;
+
+
+    @PostMapping("/login")
+    public JsonResponse login(@RequestBody LoginFormData loginFormData){
+        return agentService.login(loginFormData);
+    }
 
     /**
      * 分页查询
