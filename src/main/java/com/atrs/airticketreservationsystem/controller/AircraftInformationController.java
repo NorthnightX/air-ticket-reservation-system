@@ -109,6 +109,9 @@ public class AircraftInformationController {
         if(lastMaintenance.before(purchase)){
             return JsonResponse.error("上次检修日期不能早于购买日期");
         }
+
+
+        
         aircraftInformation.setModifyTime(LocalDateTime.now());
         aircraftInformation.setModifier(UserHolder.getUser().getUsername());
         boolean updated = aircraftInformationService.updateById(aircraftInformation);
